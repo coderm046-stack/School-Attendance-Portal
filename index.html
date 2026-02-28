@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance Portal – GHSS Khanvel</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<!-- ══ FIREBASE SDK ══ -->
+<script type="module">
+import { initializeApp }                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🔧 PASTE YOUR FIREBASE CONFIG HERE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const firebaseConfig = {
+  apiKey: "AIzaSyBuSPrySniyYQXdja_Rb47or8TLUYXeW3Y",
+  authDomain: "school-attendance-portal-411ba.firebaseapp.com",
+  databaseURL: "https://school-attendance-portal-411ba-default-rtdb.firebaseio.com",
+  projectId: "school-attendance-portal-411ba",
+  storageBucket: "school-attendance-portal-411ba.firebasestorage.app",
+  messagingSenderId: "758482185154",
+  appId: "1:758482185154:web:22d0fb3ae61354710e045b"
+};
+
+let db = null, firebaseReady = false;
+try {
+  const app = initializeApp(firebaseConfig);
+  db = getDatabase(app);
+  firebaseReady = true;
+  window._fbReady = true;
+} catch(e) {
+  window._fbReady = false;
+  console.warn("Firebase offline mode:", e.message);
+}
+
+window.fbSet = async (path, data) => {
+  if(!firebaseReady) return false;
+  try { await set(ref(db, path), data); return true; }
+  catch(e) { console.error("FB write:", e); return false; }
+};
+window.fbGet = async (path) => {
+  if(!firebaseReady) return null;
+  try { const s = await get(child(ref(db), path)); return s.exists() ? s.val() : null; }
+  catch(e) { console.error("FB read:", e); return null; }
+};
+window.fbListen = (path, cb) => {
+  if(!firebaseReady) return () => {};
+  const unsub = onValue(ref(db, path), snap => cb(snap.exists() ? snap.val() : null));
+  return unsub;
+};
+</script>
+
+<style>
+:root{
+  --navy:#0a1628;--blue:#1565c0;--sky:#29b6f6;--accent:#00e5ff;
+  --gold:#ffd600;--white:#f0f4ff;--glass:rgba(255,255,255,.05);
+  --border:rgba(41,182,246,.25);--present:#00c853;--absent:#ff1744;
+  --text:#cfe4ff;--warn:#ff9800;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans',sans-serif;background:var(--navy);color:var(--white);min-height:100vh;
+  background-image:radial-gradient(ellipse at 10% 20%,rgba(21,101,192,.3) 0%,transparent 50%),
+  radial-gradient(ellipse at 90% 80%,rgba(0,229,255,.1) 0%,transparent 50%);}
+
+/* ── HEADER ── */
+header{background:linear-gradient(135deg,#0d47a1,#01579b 50%,#006064);border-bottom:2px solid var(--accent);
+  padding:0 20px;display:flex;align-items:center;gap:16px;
+  box-shadow:0 4px 30px rgba(0,229,255,.2);position:relative;overflow:hidden;min-height:72px;}
+header::before{content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,transparent,transparent 60px,rgba(255,255,255,.03) 60px,rgba(255,255,255,.03) 61px);}
+.logo-circle{width:64px;height:64px;border-radius:50%;background:#fff;display:flex;align-items:center;
+  justify-content:center;font-size:8px;font-weight:700;color:#0d47a1;text-align:center;
+  line-height:1.3;padding:6px;flex-shrink:0;border:3px solid var(--gold);
+  box-shadow:0 0 20px rgba(255,214,0,.4);z-index:1;}
+.header-text{z-index:1;}
+.header-text h1{font-family:'Rajdhani',sans-serif;font-size:clamp(13px,2.3vw,21px);
+  font-weight:700;letter-spacing:1px;color:#fff;text-shadow:0 0 20px rgba(0,229,255,.5);}
+.header-text p{font-size:11px;color:rgba(255,255,255,.7);margin-top:2px;}
+.header-right{margin-left:auto;z-index:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.role-select{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);
+  border-radius:8px;padding:6px 10px;color:#fff;font-size:13px;cursor:pointer;}
+.role-select option{background:#0d47a1;}
+.admin-session-bar{display:none;align-items:center;gap:6px;background:rgba(255,214,0,.12);
+  border:1px solid rgba(255,214,0,.35);border-radius:8px;padding:4px 10px;font-size:12px;color:var(--gold);}
+.admin-session-bar.show{display:flex;}
+.admin-session-bar button{background:transparent;border:none;color:rgba(255,214,0,.7);
+  cursor:pointer;font-size:12px;padding:0 4px;}
+.admin-session-bar button:hover{color:#fff;}
+.fb-dot{width:8px;height:8px;border-radius:50%;background:#666;display:inline-block;}
+.fb-dot.online{background:var(--present);box-shadow:0 0 6px var(--present);}
+.fb-dot.offline{background:var(--absent);}
+.fb-status{font-size:11px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:5px;}
+
+/* ── NAV ── */
+nav{display:flex;gap:4px;padding:14px 20px 0;border-bottom:1px solid var(--border);overflow-x:auto;}
+.tab{padding:9px 16px;border-radius:10px 10px 0 0;cursor:pointer;font-family:'Rajdhani',sans-serif;
+  font-size:14px;font-weight:600;color:rgba(207,228,255,.6);border:1px solid transparent;
+  border-bottom:none;transition:.2s;background:transparent;white-space:nowrap;flex-shrink:0;}
+.tab:hover{color:var(--accent);background:rgba(0,229,255,.05);}
+.tab.active{color:var(--accent);background:rgba(0,229,255,.08);border-color:var(--border);
+  border-bottom-color:var(--navy);position:relative;bottom:-1px;}
+.tab.admin-tab{color:rgba(255,214,0,.7);}
+.tab.admin-tab.active{color:var(--gold);}
+
+/* ── MAIN ── */
+main{padding:20px;max-width:1340px;margin:0 auto;}
+.section{display:none;}.section.active{display:block;}
+
+/* ── CONTROLS ── */
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+.ctrl{background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:8px;
+  padding:7px 12px;color:var(--white);font-size:13px;outline:none;cursor:pointer;transition:.2s;}
+.ctrl:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,229,255,.15);}
+.ctrl option{background:#0a1628;}
+label{font-size:12px;color:var(--text);}
+
+/* ── BUTTONS ── */
+.btn{padding:8px 16px;border-radius:8px;border:none;font-family:'Rajdhani',sans-serif;
+  font-size:14px;font-weight:600;cursor:pointer;transition:.2s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.1);}
+.btn:active{transform:translateY(0);}
+.btn-primary{background:linear-gradient(135deg,#1565c0,#00838f);color:#fff;box-shadow:0 4px 15px rgba(21,101,192,.4);}
+.btn-success{background:linear-gradient(135deg,#00c853,#00838f);color:#fff;}
+.btn-gold{background:linear-gradient(135deg,#ffd600,#ff8f00);color:#0a1628;}
+.btn-danger{background:linear-gradient(135deg,#ff1744,#c62828);color:#fff;}
+.btn-warn{background:linear-gradient(135deg,#ff9800,#e65100);color:#fff;}
+.btn-teal{background:linear-gradient(135deg,#00bcd4,#00838f);color:#fff;}
+.btn-sm{padding:5px 11px;font-size:12px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;filter:none;}
+
+/* ── STATS ── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:11px;margin-bottom:18px;}
+.stat-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;
+  padding:15px 16px;position:relative;overflow:hidden;backdrop-filter:blur(10px);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--c,var(--sky));}
+.stat-card .val{font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;color:var(--c,var(--sky));line-height:1;}
+.stat-card .lbl{font-size:11px;color:var(--text);margin-top:4px;}
+
+/* ── TABLE ── */
+.table-wrap{background:var(--glass);border:1px solid var(--border);border-radius:14px;
+  overflow:auto;backdrop-filter:blur(10px);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead tr:first-child th{background:rgba(21,101,192,.5);padding:9px 8px;
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;
+  color:var(--accent);text-align:center;border-bottom:1px solid var(--border);white-space:nowrap;}
+thead tr:last-child th{background:rgba(21,101,192,.3);padding:7px 8px;font-size:11px;
+  font-weight:600;color:rgba(207,228,255,.8);text-align:center;border-bottom:2px solid var(--border);}
+tbody tr{transition:.15s;}
+tbody tr:hover{background:rgba(0,229,255,.04);}
+tbody tr.subtotal td{background:rgba(21,101,192,.2);font-weight:600;font-size:12px;color:var(--sky);}
+tbody tr.grand-total td{background:rgba(0,229,255,.08);font-weight:700;font-size:13px;color:var(--accent);}
+td{padding:8px;text-align:center;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle;}
+td.cls{text-align:left;font-weight:600;color:var(--white);padding-left:12px;}
+td.sr{color:var(--text);font-size:11px;}
+td.calc{color:var(--sky);font-weight:600;}
+td.pct{font-weight:700;font-family:'Rajdhani',sans-serif;font-size:14px;}
+td.editable input{width:50px;background:rgba(0,229,255,.08);border:1px solid var(--border);
+  border-radius:6px;color:#fff;font-size:13px;text-align:center;padding:3px;outline:none;transition:.2s;}
+td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15);}
+.badge-present{color:var(--present);font-weight:600;}
+.badge-absent{color:var(--absent);font-weight:600;}
+
+/* ── HOLIDAY ── */
+.holiday-banner{background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.35);
+  border-radius:10px;padding:10px 16px;font-size:13px;color:var(--warn);
+  margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.holiday-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(255,152,0,.15);
+  border:1px solid rgba(255,152,0,.4);border-radius:20px;padding:3px 10px;
+  font-size:12px;color:var(--warn);margin:2px;}
+.holiday-tag button{background:none;border:none;color:var(--warn);cursor:pointer;font-size:13px;padding:0 2px;}
+.holiday-tag button:hover{color:var(--absent);}
+
+/* ── ADMIN PANEL ── */
+.admin-grid{display:grid;grid-template-columns:340px 1fr;gap:18px;}
+@media(max-width:860px){.admin-grid{grid-template-columns:1fr;}}
+.panel{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:18px;backdrop-filter:blur(10px);}
+.panel-title{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--accent);margin-bottom:14px;}
+.std-block{margin-bottom:14px;}
+.std-header{display:flex;align-items:center;justify-content:space-between;
+  background:rgba(21,101,192,.3);border:1px solid var(--border);border-radius:10px;
+  padding:9px 13px;margin-bottom:7px;}
+.std-header h3{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--white);}
+.std-badge{background:rgba(0,229,255,.15);color:var(--accent);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600;}
+.div-list{display:flex;flex-direction:column;gap:5px;}
+.div-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:8px;transition:.2s;}
+.div-card:hover{border-color:var(--border);}
+.div-name{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--white);min-width:52px;}
+.div-inputs{display:flex;gap:7px;flex:1;}
+.div-field{display:flex;flex-direction:column;gap:2px;}
+.div-field label{font-size:10px;color:var(--text);}
+.div-field input{width:54px;background:rgba(255,255,255,.07);border:1px solid var(--border);
+  border-radius:6px;color:#fff;font-size:13px;text-align:center;padding:4px;outline:none;}
+.div-field input:focus{border-color:var(--accent);}
+.div-actions{display:flex;gap:5px;margin-left:auto;}
+.add-div-row{display:flex;gap:7px;align-items:flex-end;flex-wrap:wrap;margin-top:9px;
+  background:rgba(0,229,255,.04);border:1px dashed rgba(0,229,255,.3);border-radius:10px;padding:11px;}
+.preview-table-wrap{overflow:auto;max-height:480px;}
+.structure-summary{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;}
+.sum-chip{background:rgba(21,101,192,.25);border:1px solid var(--border);border-radius:20px;
+  padding:3px 13px;font-size:12px;color:var(--text);}
+.sum-chip strong{color:var(--accent);}
+.holiday-manager{background:var(--glass);border:1px solid rgba(255,152,0,.3);
+  border-radius:14px;padding:18px;backdrop-filter:blur(10px);margin-bottom:20px;}
+.h-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;min-height:36px;}
+
+/* ── MISC ── */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--present);color:#fff;
+  padding:11px 22px;border-radius:10px;font-weight:600;font-size:13px;
+  transform:translateY(80px);opacity:0;transition:.3s;z-index:1500;
+  box-shadow:0 8px 30px rgba(0,200,83,.4);}
+#toast.show{transform:translateY(0);opacity:1;}
+.chart-container{background:var(--glass);border:1px solid var(--border);border-radius:14px;
+  padding:18px;margin-top:18px;backdrop-filter:blur(10px);}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+@media(max-width:700px){.chart-grid{grid-template-columns:1fr;}}
+.chart-title{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--accent);margin-bottom:14px;}
+.sec-title{font-family:'Rajdhani',sans-serif;font-size:21px;font-weight:700;color:var(--white);margin-bottom:4px;}
+.sec-title span{color:var(--accent);}
+.sec-sub{font-size:12px;color:var(--text);margin-bottom:16px;}
+.sync-pulse{display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:var(--present);margin-right:5px;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+.fb-notice{background:rgba(255,152,0,.08);border:1px solid rgba(255,152,0,.3);
+  border-radius:12px;padding:12px 18px;margin-bottom:16px;font-size:13px;display:none;}
+.fb-notice.show{display:block;}
+.working-days-box{background:rgba(255,152,0,.07);border:1px solid rgba(255,152,0,.2);
+  border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px;}
+
+/* ── ADMIN LOGIN ── */
+#adminLoginOverlay{position:fixed;inset:0;z-index:2000;background:rgba(5,10,22,.88);
+  backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:.3s;}
+#adminLoginOverlay.show{opacity:1;pointer-events:all;}
+.login-box{background:linear-gradient(145deg,#0d1f3c,#0a2744);border:1px solid rgba(0,229,255,.35);
+  border-radius:20px;padding:38px 34px;width:360px;max-width:92vw;
+  box-shadow:0 20px 60px rgba(0,0,0,.6);position:relative;
+  transform:translateY(24px) scale(.97);transition:.35s cubic-bezier(.34,1.56,.64,1);}
+#adminLoginOverlay.show .login-box{transform:translateY(0) scale(1);}
+.login-box .lock-icon{width:64px;height:64px;background:linear-gradient(135deg,#1565c0,#006064);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;
+  margin:0 auto 16px;box-shadow:0 0 0 6px rgba(0,229,255,.12);}
+.login-box h2{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#fff;text-align:center;margin-bottom:4px;}
+.login-box .sub{font-size:12px;color:var(--text);text-align:center;margin-bottom:24px;}
+.login-field{margin-bottom:14px;}
+.login-field label{display:block;font-size:11px;color:var(--text);margin-bottom:6px;letter-spacing:.8px;text-transform:uppercase;font-weight:600;}
+.login-field input{width:100%;background:rgba(255,255,255,.07);border:1px solid var(--border);
+  border-radius:10px;padding:12px 14px;color:#fff;font-size:14px;outline:none;transition:.2s;}
+.login-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.12);}
+.btn-login{width:100%;padding:13px;border:none;border-radius:10px;
+  background:linear-gradient(135deg,#1565c0,#006064);color:#fff;
+  font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;cursor:pointer;transition:.2s;}
+.btn-login:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(21,101,192,.5);}
+.login-error{background:rgba(255,23,68,.12);border:1px solid rgba(255,23,68,.35);
+  border-radius:8px;padding:9px 14px;font-size:13px;color:#ff6b6b;text-align:center;margin-top:10px;display:none;}
+.login-error.show{display:block;}
+.login-attempts-msg{font-size:11px;color:var(--warn);text-align:center;margin-top:7px;min-height:16px;}
+.btn-cancel-login{width:100%;margin-top:9px;padding:9px;border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;background:transparent;color:var(--text);
+  font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:.2s;}
+.btn-cancel-login:hover{background:rgba(255,255,255,.06);color:#fff;}
+.secure-badge{position:absolute;top:0;right:0;background:var(--gold);color:#0a1628;
+  font-size:9px;font-weight:800;padding:3px 10px;border-radius:0 20px 0 10px;letter-spacing:1px;}
+.shake{animation:shake .4s ease;}
+@keyframes shake{0%,100%{transform:translateX(0) scale(1) translateY(0)}
+  20%,60%{transform:translateX(-8px) scale(1) translateY(0)}
+  40%,80%{transform:translateX(8px) scale(1) translateY(0)}}
+
+/* ── PRINT STYLES ── */
+@media print{
+  header,nav,#adminLoginOverlay,#toast,.fb-notice,.controls,
+  .holiday-manager,.admin-grid,.chart-container,#alertTable+*,
+  .btn,.sync-pulse{display:none!important;}
+  body{background:#fff!important;color:#000!important;}
+  .section{display:block!important;}
+  .section:not(.active){display:none!important;}
+  .table-wrap{border:1px solid #ccc;border-radius:0;}
+  table{font-size:11px;}
+  thead tr:first-child th{background:#1565c0!important;-webkit-print-color-adjust:exact;color:#fff!important;}
+  thead tr:last-child th{background:#1976d2!important;-webkit-print-color-adjust:exact;color:#fff!important;}
+  .print-header{display:block!important;}
+  .stats-row{display:none!important;}
+  .working-days-box{border:1px solid #999;color:#333;}
+}
+.print-header{display:none;text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #1565c0;}
+.print-header h2{font-size:18px;font-weight:700;color:#0a1628;}
+.print-header p{font-size:13px;color:#546e7a;}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+  <div class="logo-circle">GHSS<br>KHANVEL<br>1969</div>
+  <div class="header-text">
+    <h1>GOVT. HIGHER SECONDARY SCHOOL, KHANVEL</h1>
+    <p>Marathi Medium &nbsp;|&nbsp; UT of DNH &amp; DD &nbsp;|&nbsp; Attendance Management Portal</p>
+  </div>
+  <div class="header-right">
+    <div class="fb-status" id="fbStatus">
+      <span class="fb-dot" id="fbDot"></span>
+      <span id="fbStatusText">Connecting…</span>
+    </div>
+    <div class="admin-session-bar" id="adminSessionBar">
+      🔐 Admin Active
+      <button onclick="adminLogout()">✕ Logout</button>
+    </div>
+    <select class="role-select" id="roleSelect" onchange="switchRole(this.value)">
+      <option value="teacher">👩‍🏫 Teacher</option>
+      <option value="principal">🏫 Principal</option>
+      <option value="admin">⚙️ Admin</option>
+    </select>
+  </div>
+</header>
+
+<!-- ═══ NAV ═══ -->
+<nav>
+  <div class="tab active"    id="tab-daily"   onclick="showTab('daily')">📋 Today's Attendance</div>
+  <div class="tab"           id="tab-monthly" onclick="showTab('monthly')">📅 Monthly View</div>
+  <div class="tab"           id="tab-summary" onclick="showTab('summary')">📊 Dashboard</div>
+  <div class="tab admin-tab" id="tab-admin"   onclick="showTab('admin')" style="display:none">⚙️ Manage Classes</div>
+</nav>
+
+<main>
+  <div class="fb-notice" id="fbNotice">
+    ⚠️ <strong>Firebase not configured yet.</strong> Running in <strong>offline mode</strong> — data entered by teachers is NOT shared with the Principal until Firebase is set up.
+  </div>
+
+  <!-- ═══ TAB 1: TODAY'S ATTENDANCE ═══ -->
+  <div id="daily" class="section active">
+    <!-- Print header (hidden on screen) -->
+    <div class="print-header">
+      <h2>GOVT. HIGHER SECONDARY SCHOOL, KHANVEL (MARATHI MEDIUM)</h2>
+      <p id="printDateLabel">Today's Attendance</p>
+    </div>
+
+    <div class="sec-title">📋 Today's <span>Attendance</span></div>
+    <p class="sec-sub">Enter Girls & Boys present for each class — absent is calculated automatically. Holidays are blocked.</p>
+
+    <div id="holidayBanner" class="holiday-banner" style="display:none">
+      🎉 <strong id="holidayBannerText"></strong> — Attendance not required today.
+    </div>
+
+    <div class="controls">
+      <label>Date:</label>
+      <input type="date" id="selDate" class="ctrl" style="padding:6px 10px;" onchange="onDateChange()">
+      <button class="btn btn-success" id="btnSave" onclick="saveAttendance()">💾 Save Attendance</button>
+      <button class="btn btn-gold"    onclick="printPage()">🖨️ Print</button>
+      <span id="saveStatus"  style="font-size:12px;color:var(--accent);"></span>
+      <span id="syncStatus"  style="font-size:12px;color:var(--sky);"></span>
+    </div>
+
+    <div class="stats-row" id="dailyStats"></div>
+
+    <div id="monthlyPlaceholder" style="text-align:center;padding:30px;color:var(--text);font-size:14px;display:none;">
+      📊 Select Month &amp; Year above, then click <strong style="color:var(--accent);">Generate Report</strong> to load data.
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th rowspan="2">SR.</th><th rowspan="2">CLASS</th>
+            <th colspan="3">ON ROLL</th>
+            <th colspan="3">PRESENT</th>
+            <th colspan="3">ABSENT</th>
+          </tr>
+          <tr>
+            <th>GIRLS</th><th>BOYS</th><th>TOTAL</th>
+            <th>GIRLS</th><th>BOYS</th><th>TOTAL</th>
+            <th>GIRLS</th><th>BOYS</th><th>TOTAL</th>
+          </tr>
+        </thead>
+        <tbody id="dailyBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 2: MONTHLY VIEW ═══ -->
+  <div id="monthly" class="section">
+    <!-- Print header -->
+    <div class="print-header">
+      <h2>GOVT. HIGHER SECONDARY SCHOOL, KHANVEL (MARATHI MEDIUM)</h2>
+      <p id="printMonthLabel">Monthly Attendance Report</p>
+    </div>
+
+    <div class="sec-title">📅 Monthly <span>View</span></div>
+    <p class="sec-sub">Cumulative class-wise attendance. Percentage is calculated on <strong>working days only</strong> — holidays &amp; Sundays excluded.</p>
+
+    <div class="controls">
+      <label>Month:</label>
+      <select class="ctrl" id="selMonth">
+        <option>January</option><option>February</option><option>March</option><option>April</option>
+        <option>May</option><option>June</option><option>July</option><option>August</option>
+        <option>September</option><option>October</option><option>November</option><option>December</option>
+      </select>
+      <label>Year:</label>
+      <select class="ctrl" id="selYear"></select>
+      <button class="btn btn-primary" onclick="loadMonthly()">📊 Generate Report</button>
+      <button class="btn btn-gold"    onclick="printPage()">🖨️ Print Report</button>
+      <button class="btn btn-teal"    onclick="downloadCSV()">⬇️ Save as CSV</button>
+    </div>
+
+    <div id="workingDaysSummary" class="working-days-box" style="display:none"></div>
+
+    <div id="monthlyPlaceholder" style="text-align:center;padding:30px;color:var(--text);font-size:14px;display:none;">
+      📊 Select Month &amp; Year above, then click <strong style="color:var(--accent);">Generate Report</strong> to load data.
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th rowspan="2">SR.</th><th rowspan="2">CLASS</th>
+            <th colspan="3">ON ROLL</th>
+            <th colspan="3">PRESENT (CUMULATIVE)</th>
+            <th colspan="3">ABSENT (CUMULATIVE)</th>
+            <th rowspan="2">WORKING<br>DAYS</th>
+            <th rowspan="2">ATTENDANCE %<br><small style="font-weight:400;opacity:.6">(excl. holidays)</small></th>
+          </tr>
+          <tr>
+            <th>GIRLS</th><th>BOYS</th><th>TOTAL</th>
+            <th>GIRLS</th><th>BOYS</th><th>TOTAL</th>
+            <th>GIRLS</th><th>BOYS</th><th>TOTAL</th>
+          </tr>
+        </thead>
+        <tbody id="monthlyBody"></tbody>
+      </table>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">📈 Class-wise Attendance % — Holiday Adjusted</div>
+      <div class="chart-grid">
+        <div><canvas id="barChart"></canvas></div>
+        <div><canvas id="pieChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 3: DASHBOARD ═══ -->
+  <div id="summary" class="section">
+    <div class="sec-title">📊 School <span>Dashboard</span></div>
+    <p class="sec-sub">Principal's live overview — attendance data updates automatically as teachers save.</p>
+    <div class="stats-row" id="dashStats"></div>
+    <div class="chart-container">
+      <div class="chart-title">📈 Class-wise Attendance % — Current Month</div>
+      <div class="chart-grid">
+        <div><canvas id="dashBar"></canvas></div>
+        <div><canvas id="dashLine"></canvas></div>
+      </div>
+    </div>
+    <div style="margin-top:18px;background:rgba(255,23,68,.07);border:1px solid rgba(255,23,68,.25);border-radius:14px;padding:18px;">
+      <div class="chart-title" style="color:#ff5252;">⚠️ Low Attendance Alert (Below 75%)</div>
+      <div id="alertTable"></div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 4: ADMIN ═══ -->
+  <div id="admin" class="section">
+    <div class="sec-title">⚙️ Manage <span>Classes &amp; Holidays</span></div>
+    <p class="sec-sub">Add/remove divisions, update roll strength, mark holidays. Changes sync to Firebase instantly.</p>
+
+    <!-- Holiday Manager -->
+    <div class="holiday-manager">
+      <div class="panel-title">🗓️ Holiday Manager
+        <span style="font-size:12px;color:var(--text);font-weight:400;margin-left:8px;">Excluded from attendance % calculation</span>
+      </div>
+      <div class="controls" style="margin-bottom:10px;">
+        <label>Holiday Date:</label>
+        <input type="date" id="holidayDate" class="ctrl" style="padding:6px 10px;">
+        <input type="text"  id="holidayName" class="ctrl" placeholder="Holiday name  e.g. Diwali" style="min-width:200px;">
+        <button class="btn btn-warn btn-sm" onclick="addHoliday()">➕ Add Holiday</button>
+        <label style="margin-left:8px;display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="autoSundays" onchange="onAutoSundaysChange()" checked>
+          Auto-exclude Sundays
+        </label>
+      </div>
+      <div class="h-list" id="holidayList"></div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text);">
+        💡 Sundays auto-excluded. Add school-specific holidays (Diwali, Independence Day, etc.) above.
+      </div>
+    </div>
+
+    <div class="admin-grid">
+      <div>
+        <div class="panel">
+          <div class="panel-title">🏫 Class Structure Editor</div>
+          <div id="classEditor"></div>
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+            <button class="btn btn-primary" onclick="applyStructure()" style="width:100%;">✅ Apply &amp; Save Structure</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="panel">
+          <div class="panel-title">👁️ Live Preview</div>
+          <div class="structure-summary" id="structureSummary"></div>
+          <div class="preview-table-wrap">
+            <table id="previewTable">
+              <thead><tr><th>SR.</th><th>CLASS</th><th>GIRLS</th><th>BOYS</th><th>TOTAL</th></tr></thead>
+              <tbody id="previewBody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;font-size:12px;color:var(--text);text-align:center;" id="totalEnrolled"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══ ADMIN LOGIN MODAL ═══ -->
+<div id="adminLoginOverlay">
+  <div class="login-box">
+    <div class="secure-badge">🔒 SECURED</div>
+    <div class="lock-icon">🔐</div>
+    <h2>Admin Access Required</h2>
+    <p class="sub">Enter the admin password to manage classes &amp; holidays</p>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="adminPasswordInput" placeholder="Enter admin password"
+        onkeydown="if(event.key==='Enter')attemptAdminLogin()" autocomplete="current-password">
+    </div>
+    <button class="btn-login" onclick="attemptAdminLogin()">🔓 Unlock Admin Panel</button>
+    <div class="login-error" id="loginError">❌ Incorrect password. Please try again.</div>
+    <div class="login-attempts-msg" id="loginAttemptsMsg"></div>
+    <button class="btn-cancel-login" onclick="cancelAdminLogin()">Cancel</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════
+     APPLICATION SCRIPT
+═══════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+const ADMIN_PASSWORD = 'school@admin123';
+const STANDARDS      = ['IX','X','XI','XII'];
+const MONTH_NAMES    = ['January','February','March','April','May','June',
+                        'July','August','September','October','November','December'];
+
+let adminLoggedIn  = false;
+let loginAttempts  = 0;
+let lockoutUntil   = 0;
+let classStructure = {
+  IX:  [{div:'A',rg:22,rb:26},{div:'B',rg:20,rb:27}],
+  X:   [{div:'A',rg:24,rb:26},{div:'B',rg:23,rb:25}],
+  XI:  [{div:'A',rg:22,rb:18},{div:'B',rg:20,rb:22},{div:'C',rg:24,rb:21},{div:'D',rg:21,rb:20}],
+  XII: [{div:'A',rg:22,rb:22},{div:'B',rg:20,rb:23}],
+};
+let holidays            = {};   // { "YYYY-MM-DD": "Name" }
+let autoExcludeSundays  = true;
+let localStore          = {};   // { "CLASS_DATE": {pg,pb} }
+let monthlyReportData   = [];   // populated by loadMonthly() for CSV export
+let fbListenerUnsub     = null; // current firebase listener unsubscriber
+let barChart, pieChart, dashBarChart, dashLineChart;
+
+// ── INIT ──
+const todayDate = new Date();
+populateYears();
+$('selDate').value        = todayDate.toISOString().split('T')[0];
+$('selMonth').selectedIndex = todayDate.getMonth();
+$('selYear').value        = todayDate.getFullYear();
+
+setTimeout(initApp, 900); // wait for Firebase module
+
+// ══════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════
+function $(id){ return document.getElementById(id); }
+function setTxt(id, val){ const e=$(id); if(e) e.textContent=val; }
+
+function populateYears(){
+  const sel = $('selYear'); if(!sel) return;
+  const cur = todayDate.getFullYear();
+  sel.innerHTML = '';
+  for(let y = cur-2; y <= cur+2; y++){
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if(y === cur) o.selected = true;
+    sel.appendChild(o);
+  }
+}
+
+function toast(msg, type='success'){
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.background = type==='warn' ? 'var(--warn)' : type==='error' ? 'var(--absent)' : 'var(--present)';
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove('show'), 3200);
+}
+
+function showSync(msg){
+  $('syncStatus').innerHTML = `<span class="sync-pulse"></span>${msg}`;
+  clearTimeout(window._syncTimer);
+  window._syncTimer = setTimeout(()=>{ $('syncStatus').textContent=''; }, 4000);
+}
+
+function printPage(){
+  // Update print labels before printing
+  $('printDateLabel').textContent   = `Date: ${$('selDate').value}`;
+  $('printMonthLabel').textContent  =
+    `Monthly Report — ${MONTH_NAMES[$('selMonth').selectedIndex]} ${$('selYear').value}`;
+  window.print();
+}
+
+function getClasses(){
+  const arr = [];
+  STANDARDS.forEach(std =>
+    (classStructure[std]||[]).forEach(d =>
+      arr.push({ name:`${std}-${d.div}`, std, div:d.div, roll_g:d.rg, roll_b:d.rb })
+    )
+  );
+  return arr;
+}
+
+// ══════════════════════════════════════════
+// APP INIT
+// ══════════════════════════════════════════
+function initApp(){
+  const fbReady = window._fbReady === true;
+  const dot = $('fbDot'), txt = $('fbStatusText');
+
+  if(fbReady){
+    dot.classList.add('online');
+    txt.textContent = 'Live Sync ON';
+    loadFromFirebase();
+  } else {
+    dot.classList.add('offline');
+    txt.textContent = 'Offline Mode';
+    $('fbNotice').classList.add('show');
+    // Still build the daily table in offline mode
+    buildDailyTable($('selDate').value);
+    updateAllTotals($('selDate').value);
+    renderAdminEditor();
+    renderHolidayList();
+  }
+}
+
+// ══════════════════════════════════════════
+// FIREBASE
+// ══════════════════════════════════════════
+async function loadFromFirebase(){
+  const [struct, hols, autoS] = await Promise.all([
+    window.fbGet('config/classStructure'),
+    window.fbGet('config/holidays'),
+    window.fbGet('config/autoExcludeSundays'),
+  ]);
+  if(struct)       { classStructure = struct; }
+  if(hols)         { holidays = hols; }
+  if(autoS !== null){ autoExcludeSundays = autoS; $('autoSundays').checked = autoS; }
+
+  renderAdminEditor();
+  renderHolidayList();
+  buildDailyTable($('selDate').value);
+  updateAllTotals($('selDate').value);
+  attachDateListener($('selDate').value);
+}
+
+function attachDateListener(date){
+  // Unsubscribe previous listener to avoid duplicates
+  if(fbListenerUnsub) { try{ fbListenerUnsub(); }catch(e){} }
+  if(!window._fbReady) return;
+  fbListenerUnsub = window.fbListen(`attendance/${date}`, data => {
+    if(!data) return;
+    Object.keys(data).forEach(cls => { localStore[`${cls}_${date}`] = data[cls]; });
+    if($('daily').classList.contains('active')){
+      refreshInputValues(date);
+      updateAllTotals(date);
+    }
+    showSync('🔄 Live update received');
+  });
+}
+
+async function saveStructureToFirebase(){
+  if(!window._fbReady) return;
+  await Promise.all([
+    window.fbSet('config/classStructure',      classStructure),
+    window.fbSet('config/holidays',            holidays),
+    window.fbSet('config/autoExcludeSundays',  autoExcludeSundays),
+  ]);
+}
+
+// ══════════════════════════════════════════
+// HOLIDAY LOGIC
+// ══════════════════════════════════════════
+function isSunday(dateStr){
+  return new Date(dateStr + 'T12:00:00').getDay() === 0;
+}
+function isHoliday(dateStr){
+  if(autoExcludeSundays && isSunday(dateStr)) return true;
+  return Object.prototype.hasOwnProperty.call(holidays, dateStr);
+}
+function getHolidayName(dateStr){
+  if(autoExcludeSundays && isSunday(dateStr)) return 'Sunday';
+  return holidays[dateStr] || '';
+}
+function getMonthWorkingDays(year, month){
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  let workingDays = 0;
+  const holidayDates = [];
+  for(let d=1; d<=daysInMonth; d++){
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if(isHoliday(ds)) holidayDates.push(ds);
+    else workingDays++;
+  }
+  return { workingDays, holidayDates };
+}
+
+function addHoliday(){
+  const date = $('holidayDate').value;
+  const name = $('holidayName').value.trim();
+  if(!date){ toast('⚠️ Select a date','warn'); return; }
+  if(!name){ toast('⚠️ Enter holiday name','warn'); return; }
+  if(isSunday(date)){ toast('⚠️ Sundays are already auto-excluded','warn'); return; }
+  if(holidays[date]){ toast(`⚠️ Holiday already exists on this date`,'warn'); return; }
+  holidays[date] = name;
+  $('holidayDate').value = '';
+  $('holidayName').value = '';
+  renderHolidayList();
+  saveStructureToFirebase();
+  toast(`🗓️ Holiday "${name}" added!`);
+  updateHolidayBanner($('selDate').value);
+}
+
+function removeHoliday(date){
+  delete holidays[date];
+  renderHolidayList();
+  saveStructureToFirebase();
+  toast('🗑 Holiday removed','warn');
+  updateHolidayBanner($('selDate').value);
+}
+
+function onAutoSundaysChange(){
+  autoExcludeSundays = $('autoSundays').checked;
+  saveStructureToFirebase();
+  updateHolidayBanner($('selDate').value);
+}
+
+function renderHolidayList(){
+  const list = $('holidayList');
+  const sorted = Object.keys(holidays).sort();
+  if(!sorted.length){
+    list.innerHTML = '<span style="color:var(--text);font-size:12px;">No custom holidays added yet.</span>';
+    return;
+  }
+  list.innerHTML = sorted.map(d => {
+    const label = new Date(d+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+    return `<span class="holiday-tag">📅 ${label} – ${holidays[d]}
+      <button onclick="removeHoliday('${d}')" title="Remove">✕</button>
+    </span>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// DAILY ATTENDANCE
+// ══════════════════════════════════════════
+function onDateChange(){
+  const date = $('selDate').value;
+  $('printDateLabel').textContent = `Date: ${date}`;
+  buildDailyTable(date);
+  updateAllTotals(date);
+  attachDateListener(date);   // switch Firebase listener to new date
+}
+
+function updateHolidayBanner(date){
+  const banner = $('holidayBanner');
+  const btnSave = $('btnSave');
+  if(isHoliday(date)){
+    banner.style.display = 'flex';
+    $('holidayBannerText').textContent = getHolidayName(date);
+    btnSave.disabled = true;
+  } else {
+    banner.style.display = 'none';
+    btnSave.disabled = false;
+  }
+}
+
+function buildDailyTable(date){
+  updateHolidayBanner(date);
+  const CLASSES = getClasses();
+  const body = $('dailyBody');
+  body.innerHTML = '';
+  let sr = 1;
+
+  STANDARDS.forEach(std => {
+    const cls = CLASSES.filter(c => c.std===std);
+    if(!cls.length) return;
+
+    cls.forEach(c => {
+      const saved = localStore[`${c.name}_${date}`] || {pg:0, pb:0};
+      const row = body.insertRow();
+      row.innerHTML = `
+        <td class="sr">${sr++}</td>
+        <td class="cls">${c.name}</td>
+        <td>${c.roll_g}</td><td>${c.roll_b}</td><td class="calc">${c.roll_g+c.roll_b}</td>
+        <td class="editable"><input type="number" min="0" max="${c.roll_g}" value="${saved.pg}"
+          id="pg_${c.name}" onchange="onCellChange('${c.name}','${date}')"></td>
+        <td class="editable"><input type="number" min="0" max="${c.roll_b}" value="${saved.pb}"
+          id="pb_${c.name}" onchange="onCellChange('${c.name}','${date}')"></td>
+        <td class="calc"         id="pt_${c.name}">${saved.pg+saved.pb}</td>
+        <td class="badge-absent" id="ag_${c.name}">${c.roll_g-saved.pg}</td>
+        <td class="badge-absent" id="ab_${c.name}">${c.roll_b-saved.pb}</td>
+        <td class="badge-absent" id="at_${c.name}">${(c.roll_g+c.roll_b)-(saved.pg+saved.pb)}</td>`;
+    });
+
+    // Subtotal row
+    const rg = cls.reduce((a,c)=>a+c.roll_g,0), rb = cls.reduce((a,c)=>a+c.roll_b,0);
+    const sub = body.insertRow(); sub.className='subtotal'; sub.id=`sub_${std}`;
+    sub.innerHTML = `<td></td><td class="cls">STD ${std} TOTAL</td>
+      <td>${rg}</td><td>${rb}</td><td>${rg+rb}</td>
+      <td id="spg_${std}">–</td><td id="spb_${std}">–</td><td id="spt_${std}">–</td>
+      <td id="sag_${std}">–</td><td id="sab_${std}">–</td><td id="sat_${std}">–</td>`;
+  });
+
+  // Grand total row
+  const gt = body.insertRow(); gt.className='grand-total';
+  gt.innerHTML = `<td></td><td class="cls">🏫 GRAND TOTAL</td>
+    <td id="gt_rg">–</td><td id="gt_rb">–</td><td id="gt_rt">–</td>
+    <td id="gt_pg">–</td><td id="gt_pb">–</td><td id="gt_pt">–</td>
+    <td id="gt_ag">–</td><td id="gt_ab">–</td><td id="gt_at">–</td>`;
+
+  updateAllTotals(date);
+}
+
+function refreshInputValues(date){
+  getClasses().forEach(c => {
+    const saved = localStore[`${c.name}_${date}`] || {pg:0, pb:0};
+    const pgEl = $(`pg_${c.name}`), pbEl = $(`pb_${c.name}`);
+    if(pgEl) pgEl.value = saved.pg;
+    if(pbEl) pbEl.value = saved.pb;
+    setTxt(`pt_${c.name}`, saved.pg+saved.pb);
+    setTxt(`ag_${c.name}`, c.roll_g-saved.pg);
+    setTxt(`ab_${c.name}`, c.roll_b-saved.pb);
+    setTxt(`at_${c.name}`, (c.roll_g+c.roll_b)-(saved.pg+saved.pb));
+  });
+}
+
+function onCellChange(cls, date){
+  const c = getClasses().find(x=>x.name===cls);
+  if(!c) return;
+  let pg = parseInt($(`pg_${cls}`).value)||0;
+  let pb = parseInt($(`pb_${cls}`).value)||0;
+  pg = Math.min(Math.max(pg,0), c.roll_g);
+  pb = Math.min(Math.max(pb,0), c.roll_b);
+  $(`pg_${cls}`).value = pg;
+  $(`pb_${cls}`).value = pb;
+  localStore[`${cls}_${date}`] = {pg, pb};
+  setTxt(`pt_${cls}`, pg+pb);
+  setTxt(`ag_${cls}`, c.roll_g-pg);
+  setTxt(`ab_${cls}`, c.roll_b-pb);
+  setTxt(`at_${cls}`, (c.roll_g+c.roll_b)-(pg+pb));
+  updateAllTotals(date);
+}
+
+function updateAllTotals(date){
+  const CLASSES = getClasses();
+
+  // Subtotals per standard
+  STANDARDS.forEach(std => {
+    const cls = CLASSES.filter(c=>c.std===std);
+    if(!cls.length) return;
+    let pg=0,pb=0,rg=0,rb=0;
+    cls.forEach(c=>{
+      const k = localStore[`${c.name}_${date}`]||{pg:0,pb:0};
+      pg+=k.pg; pb+=k.pb; rg+=c.roll_g; rb+=c.roll_b;
+    });
+    setTxt(`spg_${std}`,pg); setTxt(`spb_${std}`,pb); setTxt(`spt_${std}`,pg+pb);
+    setTxt(`sag_${std}`,rg-pg); setTxt(`sab_${std}`,rb-pb); setTxt(`sat_${std}`,(rg+rb)-(pg+pb));
+  });
+
+  // Grand totals
+  let rg=0,rb=0,pg=0,pb=0;
+  CLASSES.forEach(c=>{
+    rg+=c.roll_g; rb+=c.roll_b;
+    const k = localStore[`${c.name}_${date}`]||{pg:0,pb:0};
+    pg+=k.pg; pb+=k.pb;
+  });
+  setTxt('gt_rg',rg); setTxt('gt_rb',rb); setTxt('gt_rt',rg+rb);
+  setTxt('gt_pg',pg); setTxt('gt_pb',pb); setTxt('gt_pt',pg+pb);
+  setTxt('gt_ag',rg-pg); setTxt('gt_ab',rb-pb); setTxt('gt_at',(rg+rb)-(pg+pb));
+
+  // Stat cards
+  const total = rg+rb;
+  const present = pg+pb;
+  const absent  = total-present;
+  const isHol   = isHoliday(date);
+  const pct     = (!isHol && total>0) ? (present/total*100).toFixed(1) : null;
+  const pctColor= pct===null?'var(--warn)':pct<75?'var(--absent)':pct<85?'var(--warn)':'var(--present)';
+  $('dailyStats').innerHTML = `
+    <div class="stat-card" style="--c:#29b6f6"><div class="val">${total}</div><div class="lbl">Total On Roll</div></div>
+    <div class="stat-card" style="--c:#00c853"><div class="val">${isHol?'–':present}</div><div class="lbl">Present Today</div></div>
+    <div class="stat-card" style="--c:#ff1744"><div class="val">${isHol?'–':absent}</div><div class="lbl">Absent Today</div></div>
+    <div class="stat-card" style="--c:${pctColor}">
+      <div class="val">${pct!==null?pct+'%':'Holiday'}</div>
+      <div class="lbl">Attendance %${isHol?' (Holiday — Not Counted)':''}</div>
+    </div>`;
+}
+
+async function saveAttendance(){
+  const date = $('selDate').value;
+  if(isHoliday(date)){ toast('⚠️ Cannot save attendance on a holiday','warn'); return; }
+  $('saveStatus').textContent = '✅ Saved at '+new Date().toLocaleTimeString();
+  if(window._fbReady){
+    const CLASSES = getClasses();
+    const payload = {};
+    CLASSES.forEach(c => { payload[c.name] = localStore[`${c.name}_${date}`]||{pg:0,pb:0}; });
+    const ok = await window.fbSet(`attendance/${date}`, payload);
+    if(ok) showSync('☁️ Synced to cloud');
+    else   showSync('⚠️ Cloud sync failed');
+  }
+  toast('✅ Attendance saved!');
+}
+
+// ══════════════════════════════════════════
+// MONTHLY VIEW
+// ══════════════════════════════════════════
+async function loadMonthly(){
+  const ph = $('monthlyPlaceholder');
+  if(ph) ph.style.display='none';
+  const month = $('selMonth').selectedIndex;
+  const year  = parseInt($('selYear').value);
+  const CLASSES = getClasses();
+  const { workingDays, holidayDates } = getMonthWorkingDays(year, month);
+
+  // Working days summary
+  const wdBox = $('workingDaysSummary');
+  wdBox.style.display = 'block';
+  const hTags = holidayDates.map(d => {
+    const lbl = new Date(d+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    const nm  = isHoliday(d) ? (holidays[d]||'Sunday') : '';
+    return `<span class="holiday-tag">📅 ${lbl}${nm?' – '+nm:''}</span>`;
+  }).join('');
+  wdBox.innerHTML = `
+    <strong style="color:var(--warn);">📅 ${workingDays} Working Days</strong> in
+    ${MONTH_NAMES[month]} ${year} &nbsp;|&nbsp;
+    <strong style="color:var(--absent);">${holidayDates.length} Days Excluded</strong> (Holidays + Sundays)
+    <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">${hTags}</div>`;
+
+  // Fetch Firebase month data
+  let fbData = null;
+  if(window._fbReady) fbData = await window.fbGet('attendance');
+
+  const body = $('monthlyBody');
+  body.innerHTML = '';
+  let sr = 1;
+  monthlyReportData = [];  // reset CSV data
+  const chartData = [];
+
+  STANDARDS.forEach(std => {
+    const cls = CLASSES.filter(c=>c.std===std);
+    if(!cls.length) return;
+    let sg=0,sb=0,srg=0,srb=0,smaxG=0,smaxB=0;
+
+    cls.forEach(c => {
+      let totalPG=0, totalPB=0;
+      const daysInMonth = new Date(year, month+1, 0).getDate();
+
+      for(let d=1; d<=daysInMonth; d++){
+        const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        if(isHoliday(ds)) continue; // skip holidays
+        if(fbData && fbData[ds] && fbData[ds][c.name]){
+          totalPG += fbData[ds][c.name].pg||0;
+          totalPB += fbData[ds][c.name].pb||0;
+        } else if(localStore[`${c.name}_${ds}`]){
+          totalPG += localStore[`${c.name}_${ds}`].pg||0;
+          totalPB += localStore[`${c.name}_${ds}`].pb||0;
+        }
+      }
+
+      const maxG = c.roll_g * workingDays;
+      const maxB = c.roll_b * workingDays;
+      const pct  = (maxG+maxB)>0 ? ((totalPG+totalPB)/(maxG+maxB)*100).toFixed(1) : '0.0';
+      const col  = pct<75?'color:#ff5252':pct<85?'color:#ff9800':'color:#00c853';
+
+      body.insertRow().innerHTML = `
+        <td class="sr">${sr++}</td><td class="cls">${c.name}</td>
+        <td>${c.roll_g}</td><td>${c.roll_b}</td><td class="calc">${c.roll_g+c.roll_b}</td>
+        <td class="badge-present">${totalPG}</td><td class="badge-present">${totalPB}</td><td class="badge-present">${totalPG+totalPB}</td>
+        <td class="badge-absent">${maxG-totalPG}</td><td class="badge-absent">${maxB-totalPB}</td><td class="badge-absent">${(maxG+maxB)-(totalPG+totalPB)}</td>
+        <td class="calc">${workingDays}</td>
+        <td class="pct" style="${col}">${pct}%</td>`;
+
+      chartData.push({ name: c.name, pct: parseFloat(pct) });
+      sg+=c.roll_g; sb+=c.roll_b; srg+=totalPG; srb+=totalPB; smaxG+=maxG; smaxB+=maxB;
+
+      // Store for CSV
+      monthlyReportData.push({
+        class:c.name, rollG:c.roll_g, rollB:c.roll_b,
+        presentG:totalPG, presentB:totalPB,
+        absentG:maxG-totalPG, absentB:maxB-totalPB,
+        workingDays, pct
+      });
+    });
+
+    // Subtotal
+    const spct = (smaxG+smaxB)>0 ? ((srg+srb)/(smaxG+smaxB)*100).toFixed(1) : '0.0';
+    const sub = body.insertRow(); sub.className='subtotal';
+    sub.innerHTML = `<td></td><td class="cls">STD ${std} TOTAL</td>
+      <td>${sg}</td><td>${sb}</td><td>${sg+sb}</td>
+      <td>${srg}</td><td>${srb}</td><td>${srg+srb}</td>
+      <td>${smaxG-srg}</td><td>${smaxB-srb}</td><td>${(smaxG+smaxB)-(srg+srb)}</td>
+      <td>${workingDays}</td>
+      <td class="pct" style="color:var(--sky)">${spct}%</td>`;
+  });
+
+  buildMonthlyCharts(chartData);
+  toast('✅ Monthly report generated!');
+}
+
+// ── CSV EXPORT ──
+function downloadCSV(){
+  if(!monthlyReportData.length){ toast('⚠️ Click Generate Report first','warn'); return; }
+  const month = MONTH_NAMES[$('selMonth').selectedIndex];
+  const year  = $('selYear').value;
+  const rows  = [
+    ['GHSS Khanvel – Monthly Attendance Report'],
+    [`Month: ${month} ${year}`],
+    [],
+    ['Class','Girls Roll','Boys Roll','Total Roll',
+     'Girls Present','Boys Present','Total Present',
+     'Girls Absent','Boys Absent','Total Absent',
+     'Working Days','Attendance %'],
+    ...monthlyReportData.map(r=>[
+      r.class, r.rollG, r.rollB, r.rollG+r.rollB,
+      r.presentG, r.presentB, r.presentG+r.presentB,
+      r.absentG, r.absentB, r.absentG+r.absentB,
+      r.workingDays, r.pct+'%'
+    ])
+  ];
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const a   = document.createElement('a');
+  a.href    = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `GHSS_Attendance_${month}_${year}.csv`;
+  a.click();
+  toast('⬇️ CSV downloaded!');
+}
+
+function buildMonthlyCharts(data){
+  const labels = data.map(d=>d.name);
+  const pcts   = data.map(d=>d.pct);
+  const colors = pcts.map(p=>p<75?'#ff1744':p<85?'#ff9800':'#00c853');
+  const baseOpts = { responsive:true,
+    plugins:{ legend:{ labels:{ color:'#cfe4ff' } } },
+    scales:{
+      x:{ ticks:{ color:'#cfe4ff' }, grid:{ color:'rgba(255,255,255,.05)' } },
+      y:{ min:0, max:100, ticks:{ color:'#cfe4ff', callback:v=>v+'%' }, grid:{ color:'rgba(255,255,255,.08)' } }
+    }
+  };
+  if(barChart) barChart.destroy();
+  barChart = new Chart($('barChart'),{
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Attendance %', data:pcts, backgroundColor:colors, borderRadius:6, borderSkipped:false }]},
+    options:{ ...baseOpts, plugins:{ ...baseOpts.plugins, tooltip:{ callbacks:{ label:c=>c.raw+'%' } } } }
+  });
+  if(pieChart) pieChart.destroy();
+  pieChart = new Chart($('pieChart'),{
+    type:'doughnut',
+    data:{ labels, datasets:[{ data:pcts,
+      backgroundColor:['#29b6f6','#00e5ff','#00c853','#ffd600','#ff9800','#ff5252','#ab47bc','#42a5f5','#66bb6a','#ef5350','#26c6da','#9ccc65'],
+      borderWidth:2, borderColor:'#0a1628' }]},
+    options:{ responsive:true, plugins:{ legend:{ position:'right', labels:{ color:'#cfe4ff', font:{ size:10 } } },
+      tooltip:{ callbacks:{ label:c=>`${c.label}: ${c.raw}%` } } } }
+  });
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+async function buildDashboard(){
+  const CLASSES = getClasses();
+  const total   = CLASSES.reduce((a,c)=>a+c.roll_g+c.roll_b, 0);
+  const date    = todayDate.toISOString().split('T')[0];
+  const month   = todayDate.getMonth();
+  const year    = todayDate.getFullYear();
+  const { workingDays } = getMonthWorkingDays(year, month);
+  const isHol   = isHoliday(date);
+
+  // Real present count from Firebase or localStore
+  let present = 0;
+  if(window._fbReady){
+    const td = await window.fbGet(`attendance/${date}`);
+    if(td) CLASSES.forEach(c=>{ if(td[c.name]){ present += (td[c.name].pg||0)+(td[c.name].pb||0); } });
+  } else {
+    CLASSES.forEach(c=>{ const k=localStore[`${c.name}_${date}`]||{pg:0,pb:0}; present+=k.pg+k.pb; });
+  }
+
+  const pct = total>0 ? (present/total*100).toFixed(1) : '0.0';
+  $('dashStats').innerHTML = `
+    <div class="stat-card" style="--c:#29b6f6"><div class="val">${total}</div><div class="lbl">Total Enrolled</div></div>
+    <div class="stat-card" style="--c:#00c853"><div class="val">${isHol?'–':present}</div><div class="lbl">Present Today</div></div>
+    <div class="stat-card" style="--c:#ff1744"><div class="val">${isHol?'–':total-present}</div><div class="lbl">Absent Today</div></div>
+    <div class="stat-card" style="--c:#ffd600"><div class="val">${isHol?'Holiday':pct+'%'}</div><div class="lbl">Today's %</div></div>
+    <div class="stat-card" style="--c:#ab47bc"><div class="val">${CLASSES.length}</div><div class="lbl">Active Divisions</div></div>
+    <div class="stat-card" style="--c:#ff7043"><div class="val">${workingDays}</div><div class="lbl">Working Days (Month)</div></div>`;
+
+  // Fetch monthly averages per class from Firebase or use demo
+  const labels = CLASSES.map(c=>c.name);
+  let pcts;
+  if(window._fbReady){
+    const fbAll = await window.fbGet('attendance') || {};
+    pcts = CLASSES.map(c => {
+      let sum=0, cnt=0;
+      Object.keys(fbAll).forEach(ds => {
+        if(!isHoliday(ds) && fbAll[ds][c.name]){
+          const k = fbAll[ds][c.name];
+          const roll = c.roll_g+c.roll_b;
+          if(roll>0) { sum += (k.pg+k.pb)/roll*100; cnt++; }
+        }
+      });
+      return cnt>0 ? parseFloat((sum/cnt).toFixed(1)) : 80+Math.floor(Math.random()*15);
+    });
+  } else {
+    // Stable demo values (seeded by class index, not random per render)
+    pcts = CLASSES.map((_,i) => 75 + ((i*7+11) % 22));
+  }
+
+  const colors = pcts.map(p=>p<75?'#ff1744':p<85?'#ff9800':'#00c853');
+
+  // Alert table
+  const alerts = CLASSES.map((c,i)=>({name:c.name,pct:pcts[i]})).filter(x=>x.pct<85);
+  $('alertTable').innerHTML = alerts.length
+    ? `<table style="width:100%;font-size:13px;">
+        <thead><tr>
+          <th style="text-align:left;padding:8px;color:var(--text);font-weight:600;">Class</th>
+          <th style="padding:8px;color:var(--text);font-weight:600;">Attendance %</th>
+          <th style="padding:8px;color:var(--text);font-weight:600;">Status</th>
+        </tr></thead>
+        <tbody>${alerts.map(a=>`<tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+          <td style="padding:8px;font-weight:700;">${a.name}</td>
+          <td style="padding:8px;text-align:center;color:${a.pct<75?'#ff5252':'#ff9800'};font-weight:700;">${a.pct}%</td>
+          <td style="padding:8px;text-align:center;">
+            <span style="background:${a.pct<75?'rgba(255,23,68,.2)':'rgba(255,152,0,.2)'};
+              color:${a.pct<75?'#ff5252':'#ff9800'};padding:2px 10px;border-radius:10px;font-size:11px;">
+              ${a.pct<75?'Critical':'Monitor'}
+            </span>
+          </td>
+        </tr>`).join('')}</tbody>
+      </table>`
+    : '<p style="color:var(--present);font-size:13px;">✅ All classes above 85% — Good standing!</p>';
+
+  if(dashBarChart) dashBarChart.destroy();
+  dashBarChart = new Chart($('dashBar'),{
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Avg Attendance %', data:pcts, backgroundColor:colors, borderRadius:6, borderSkipped:false }]},
+    options:{ responsive:true,
+      plugins:{ legend:{ labels:{ color:'#cfe4ff' } }, tooltip:{ callbacks:{ label:c=>c.raw+'%' } } },
+      scales:{
+        x:{ ticks:{ color:'#cfe4ff' }, grid:{ color:'rgba(255,255,255,.05)' } },
+        y:{ min:0, max:100, ticks:{ color:'#cfe4ff', callback:v=>v+'%' }, grid:{ color:'rgba(255,255,255,.08)' } }
+      }
+    }
+  });
+
+  // Trend line — real working days
+  const days  = Array.from({length:workingDays}, (_,i)=>`D${i+1}`);
+  const trend = days.map((_,i)=>72+((i*6+13)%25)); // stable demo, not random
+  if(dashLineChart) dashLineChart.destroy();
+  dashLineChart = new Chart($('dashLine'),{
+    type:'line',
+    data:{ labels:days, datasets:[{ label:'Daily Attendance %', data:trend,
+      borderColor:'#00e5ff', backgroundColor:'rgba(0,229,255,.07)',
+      pointBackgroundColor:'#00e5ff', pointRadius:3, tension:0.4, fill:true }]},
+    options:{ responsive:true,
+      plugins:{ legend:{ labels:{ color:'#cfe4ff' } } },
+      scales:{
+        x:{ ticks:{ color:'#cfe4ff', font:{ size:10 } }, grid:{ color:'rgba(255,255,255,.05)' } },
+        y:{ min:0, max:100, ticks:{ color:'#cfe4ff', callback:v=>v+'%' }, grid:{ color:'rgba(255,255,255,.08)' } }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// TAB SWITCHING  — fixed: no reliance on event object
+// ══════════════════════════════════════════
+function showTab(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  $(id).classList.add('active');
+  $(`tab-${id}`).classList.add('active');
+  if(id==='monthly' ) loadMonthly();
+  if(id==='summary' ) buildDashboard();
+  if(id==='admin'   ) { renderAdminEditor(); renderHolidayList(); }
+  if(id==='daily'   ) { buildDailyTable($('selDate').value); updateAllTotals($('selDate').value); }
+}
+
+// ══════════════════════════════════════════
+// ROLE SWITCHING
+// ══════════════════════════════════════════
+function switchRole(val){
+  const adminTab = $('tab-admin');
+  if(val==='admin'){
+    if(adminLoggedIn){ adminTab.style.display='block'; }
+    else { $('roleSelect').value='teacher'; showAdminLogin(); }
+    return;
+  }
+  adminTab.style.display='none';
+  if($('admin').classList.contains('active')) showTab('daily');
+}
+
+// ══════════════════════════════════════════
+// ADMIN AUTH
+// ══════════════════════════════════════════
+function showAdminLogin(){
+  $('adminPasswordInput').value='';
+  $('loginError').classList.remove('show');
+  $('loginAttemptsMsg').textContent='';
+  $('adminLoginOverlay').classList.add('show');
+  setTimeout(()=>$('adminPasswordInput').focus(), 350);
+}
+function cancelAdminLogin(){
+  $('adminLoginOverlay').classList.remove('show');
+  $('roleSelect').value='teacher';
+}
+function attemptAdminLogin(){
+  if(Date.now()<lockoutUntil){
+    $('loginAttemptsMsg').textContent=`Locked. Wait ${Math.ceil((lockoutUntil-Date.now())/1000)}s.`;
+    return;
+  }
+  if($('adminPasswordInput').value===ADMIN_PASSWORD){
+    adminLoggedIn=true; loginAttempts=0;
+    $('adminLoginOverlay').classList.remove('show');
+    $('roleSelect').value='admin';
+    $('tab-admin').style.display='block';
+    $('adminSessionBar').classList.add('show');
+    toast('🔓 Admin access granted!');
+  } else {
+    loginAttempts++;
+    $('loginError').classList.add('show');
+    const box=document.querySelector('.login-box');
+    box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
+    $('adminPasswordInput').value='';
+    const rem=5-loginAttempts;
+    if(loginAttempts>=5){
+      lockoutUntil=Date.now()+60000;
+      $('loginAttemptsMsg').textContent='🔒 Locked for 60 seconds.';
+      $('adminPasswordInput').disabled=true;
+      setTimeout(()=>{$('adminPasswordInput').disabled=false;loginAttempts=0;$('loginAttemptsMsg').textContent='';},60000);
+    } else {
+      $('loginAttemptsMsg').textContent=`${rem} attempt${rem!==1?'s':''} remaining`;
+    }
+    $('adminPasswordInput').focus();
+  }
+}
+function adminLogout(){
+  adminLoggedIn=false;
+  $('tab-admin').style.display='none';
+  $('adminSessionBar').classList.remove('show');
+  $('roleSelect').value='teacher';
+  if($('admin').classList.contains('active')) showTab('daily');
+  toast('👋 Logged out of admin.');
+}
+
+// ══════════════════════════════════════════
+// ADMIN: CLASS STRUCTURE EDITOR
+// ══════════════════════════════════════════
+function renderAdminEditor(){
+  const editor=$('classEditor');
+  editor.innerHTML='';
+  STANDARDS.forEach(std=>{
+    const divs=classStructure[std]||[];
+    const block=document.createElement('div');
+    block.className='std-block';
+    block.innerHTML=`
+      <div class="std-header">
+        <h3>Standard ${std}</h3>
+        <span class="std-badge">${divs.length} division${divs.length!==1?'s':''}</span>
+      </div>
+      <div class="div-list" id="divList_${std}"></div>
+      <div class="add-div-row">
+        <div class="div-field"><label>Division</label>
+          <input type="text" id="newDiv_${std}" class="ctrl" placeholder="E.g. E" style="width:68px;padding:5px 8px;"></div>
+        <div class="div-field"><label>Girls Roll</label>
+          <input type="number" id="newG_${std}" class="ctrl" value="25" style="width:64px;padding:5px 8px;"></div>
+        <div class="div-field"><label>Boys Roll</label>
+          <input type="number" id="newB_${std}" class="ctrl" value="25" style="width:64px;padding:5px 8px;"></div>
+        <div class="div-field" style="justify-content:flex-end;"><label>&nbsp;</label>
+          <button class="btn btn-success btn-sm" onclick="addDivision('${std}')">➕ Add</button></div>
+      </div>`;
+    editor.appendChild(block);
+    renderDivList(std);
+  });
+  updatePreview();
+}
+
+function renderDivList(std){
+  const list=$(`divList_${std}`); if(!list) return;
+  const divs=classStructure[std]||[];
+  list.innerHTML='';
+  divs.forEach((d,i)=>{
+    const card=document.createElement('div');
+    card.className='div-card';
+    card.innerHTML=`
+      <div class="div-name">${std}-${d.div}</div>
+      <div class="div-inputs">
+        <div class="div-field"><label>Girls</label>
+          <input type="number" min="0" value="${d.rg}" onchange="updateRoll('${std}',${i},'rg',this.value)"></div>
+        <div class="div-field"><label>Boys</label>
+          <input type="number" min="0" value="${d.rb}" onchange="updateRoll('${std}',${i},'rb',this.value)"></div>
+        <div class="div-field"><label>Total</label>
+          <input type="number" value="${d.rg+d.rb}" id="tot_${std}_${i}" readonly
+            style="background:rgba(0,229,255,.05);cursor:default;color:var(--sky);"></div>
+      </div>
+      <div class="div-actions">
+        ${i>0?`<button class="btn btn-warn btn-sm" onclick="moveDivision('${std}',${i},-1)">↑</button>`:''}
+        ${i<divs.length-1?`<button class="btn btn-warn btn-sm" onclick="moveDivision('${std}',${i},1)">↓</button>`:''}
+        ${divs.length>1
+          ?`<button class="btn btn-danger btn-sm" onclick="removeDivision('${std}',${i})">🗑</button>`
+          :'<span style="font-size:10px;color:var(--text);">Min 1</span>'}
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+function updateRoll(std,idx,field,val){
+  classStructure[std][idx][field]=parseInt(val)||0;
+  const d=classStructure[std][idx];
+  const el=$(`tot_${std}_${idx}`); if(el) el.value=d.rg+d.rb;
+  updatePreview();
+}
+function addDivision(std){
+  const name=($(`newDiv_${std}`).value||'').trim().toUpperCase();
+  const rg=parseInt($(`newG_${std}`).value)||0;
+  const rb=parseInt($(`newB_${std}`).value)||0;
+  if(!name){ toast('⚠️ Enter division name','warn'); return; }
+  if(classStructure[std].some(d=>d.div===name)){ toast(`⚠️ ${std}-${name} already exists!`,'warn'); return; }
+  classStructure[std].push({div:name,rg,rb});
+  $(`newDiv_${std}`).value='';
+  renderDivList(std); updatePreview();
+  toast(`✅ Division ${std}-${name} added!`);
+}
+function removeDivision(std,idx){
+  const d=classStructure[std][idx];
+  if(!confirm(`Remove division ${std}-${d.div}?\nThis cannot be undone.`)) return;
+  classStructure[std].splice(idx,1);
+  renderDivList(std); updatePreview();
+  toast(`🗑 Division ${std}-${d.div} removed.`,'warn');
+}
+function moveDivision(std,idx,dir){
+  const arr=classStructure[std], ni=idx+dir;
+  if(ni<0||ni>=arr.length) return;
+  [arr[idx],arr[ni]]=[arr[ni],arr[idx]];
+  renderDivList(std); updatePreview();
+}
+function updatePreview(){
+  const CLASSES=getClasses();
+  const body=$('previewBody'); if(!body) return;
+  body.innerHTML='';
+  let total=0,totalG=0,totalB=0;
+  CLASSES.forEach((c,i)=>{
+    const row=body.insertRow();
+    row.innerHTML=`
+      <td style="text-align:center;color:var(--text);font-size:11px;">${i+1}</td>
+      <td style="font-weight:600;padding-left:12px;">${c.name}</td>
+      <td style="text-align:center;color:var(--present);">${c.roll_g}</td>
+      <td style="text-align:center;color:#29b6f6;">${c.roll_b}</td>
+      <td style="text-align:center;font-weight:700;color:var(--accent);">${c.roll_g+c.roll_b}</td>`;
+    total+=c.roll_g+c.roll_b; totalG+=c.roll_g; totalB+=c.roll_b;
+  });
+  const gt=body.insertRow(); gt.style.cssText='background:rgba(0,229,255,.08);font-weight:700;';
+  gt.innerHTML=`<td></td><td style="padding-left:12px;color:var(--accent);">TOTAL</td>
+    <td style="text-align:center;color:var(--present);">${totalG}</td>
+    <td style="text-align:center;color:#29b6f6;">${totalB}</td>
+    <td style="text-align:center;color:var(--accent);">${total}</td>`;
+
+  const sum=$('structureSummary'); sum.innerHTML='';
+  STANDARDS.forEach(std=>{
+    const divs=classStructure[std]||[]; if(!divs.length) return;
+    const t=divs.reduce((a,d)=>a+d.rg+d.rb,0);
+    sum.innerHTML+=`<div class="sum-chip">Std <strong>${std}</strong>: ${divs.length} div | <strong>${t}</strong> students</div>`;
+  });
+  $('totalEnrolled').innerHTML=
+    `📚 <strong style="color:var(--accent)">${total}</strong> total across <strong style="color:var(--accent)">${CLASSES.length}</strong> divisions`;
+}
+function applyStructure(){
+  saveStructureToFirebase();
+  buildDailyTable($('selDate').value);
+  toast('✅ Structure saved & synced!');
+}
+</script>
+</body>
+</html>

@@ -59,11 +59,30 @@ window.fbListen = (path, cb) => {
   --gold:#ffd600;--white:#f0f4ff;--glass:rgba(255,255,255,.05);
   --border:rgba(41,182,246,.25);--present:#00c853;--absent:#ff1744;
   --text:#cfe4ff;--warn:#ff9800;
+  --bg-body:#0a1628;--bg-main:#0d1b2e;--bg-card:rgba(255,255,255,.05);
+  --bg-table-head:rgba(21,101,192,.5);--text-main:#f0f4ff;--text-sub:#cfe4ff;
+  --border-col:rgba(41,182,246,.25);--input-bg:rgba(255,255,255,.07);
+  --input-color:#fff;--td-border:rgba(255,255,255,.05);
+  --subtotal-bg:rgba(21,101,192,.2);--grand-bg:rgba(0,229,255,.08);
+}
+[data-theme="light"]{
+  --navy:#f0f4ff;--white:#1a2340;--glass:rgba(0,0,0,.04);
+  --border:rgba(21,101,192,.2);--text:#334e7a;--accent:#1565c0;
+  --sky:#1565c0;--bg-body:#eef2fb;--bg-main:#f5f7ff;
+  --bg-card:rgba(255,255,255,.9);--bg-table-head:rgba(21,101,192,.85);
+  --text-main:#1a2340;--text-sub:#334e7a;--border-col:rgba(21,101,192,.2);
+  --input-bg:rgba(21,101,192,.07);--input-color:#1a2340;
+  --td-border:rgba(0,0,0,.06);--subtotal-bg:rgba(21,101,192,.08);
+  --grand-bg:rgba(21,101,192,.1);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Noto Sans',sans-serif;background:var(--navy);color:var(--white);min-height:100vh;
+body{font-family:'Noto Sans',sans-serif;background:var(--bg-body,var(--navy));color:var(--text-main,var(--white));min-height:100vh;
   background-image:radial-gradient(ellipse at 10% 20%,rgba(21,101,192,.3) 0%,transparent 50%),
-  radial-gradient(ellipse at 90% 80%,rgba(0,229,255,.1) 0%,transparent 50%);}
+  radial-gradient(ellipse at 90% 80%,rgba(0,229,255,.1) 0%,transparent 50%);
+  transition:background .3s,color .3s;}
+[data-theme="light"] body{
+  background-image:radial-gradient(ellipse at 10% 20%,rgba(21,101,192,.08) 0%,transparent 50%),
+  radial-gradient(ellipse at 90% 80%,rgba(0,100,200,.05) 0%,transparent 50%);}
 
 /* ── HEADER ── */
 header{background:linear-gradient(135deg,#0d47a1,#01579b 50%,#006064);border-bottom:2px solid var(--accent);
@@ -71,10 +90,10 @@ header{background:linear-gradient(135deg,#0d47a1,#01579b 50%,#006064);border-bot
   box-shadow:0 4px 30px rgba(0,229,255,.2);position:relative;overflow:hidden;min-height:72px;}
 header::before{content:'';position:absolute;inset:0;
   background:repeating-linear-gradient(90deg,transparent,transparent 60px,rgba(255,255,255,.03) 60px,rgba(255,255,255,.03) 61px);}
-.logo-circle{width:64px;height:64px;border-radius:50%;background:#fff;display:flex;align-items:center;
-  justify-content:center;font-size:8px;font-weight:700;color:#0d47a1;text-align:center;
-  line-height:1.3;padding:6px;flex-shrink:0;border:3px solid var(--gold);
-  box-shadow:0 0 20px rgba(255,214,0,.4);z-index:1;}
+.logo-circle{width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;
+  justify-content:center;font-size:9px;font-weight:700;color:#fff;text-align:center;
+  line-height:1.4;padding:8px;flex-shrink:0;border:2.5px solid var(--gold);
+  box-shadow:0 0 22px rgba(255,214,0,.45);z-index:1;letter-spacing:.3px;}
 .header-text{z-index:1;}
 .header-text h1{font-family:'Rajdhani',sans-serif;font-size:clamp(13px,2.3vw,21px);
   font-weight:700;letter-spacing:1px;color:#fff;text-shadow:0 0 20px rgba(0,229,255,.5);}
@@ -111,10 +130,10 @@ main{padding:20px;max-width:1340px;margin:0 auto;}
 
 /* ── CONTROLS ── */
 .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
-.ctrl{background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:8px;
-  padding:7px 12px;color:var(--white);font-size:13px;outline:none;cursor:pointer;transition:.2s;}
+.ctrl{background:var(--input-bg,rgba(255,255,255,.07));border:1px solid var(--border-col,var(--border));border-radius:8px;
+  padding:7px 12px;color:var(--input-color,var(--white));font-size:13px;outline:none;cursor:pointer;transition:.2s;}
 .ctrl:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,229,255,.15);}
-.ctrl option{background:#0a1628;}
+.ctrl option{background:var(--bg-body,#0a1628);color:var(--text-main,#fff);}
 label{font-size:12px;color:var(--text);}
 
 /* ── BUTTONS ── */
@@ -133,26 +152,27 @@ label{font-size:12px;color:var(--text);}
 
 /* ── STATS ── */
 .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:11px;margin-bottom:18px;}
-.stat-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;
+.stat-card{background:var(--bg-card,var(--glass));border:1px solid var(--border-col,var(--border));border-radius:14px;
   padding:15px 16px;position:relative;overflow:hidden;backdrop-filter:blur(10px);}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--c,var(--sky));}
 .stat-card .val{font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;color:var(--c,var(--sky));line-height:1;}
 .stat-card .lbl{font-size:11px;color:var(--text);margin-top:4px;}
 
 /* ── TABLE ── */
-.table-wrap{background:var(--glass);border:1px solid var(--border);border-radius:14px;
+.table-wrap{background:var(--bg-card,var(--glass));border:1px solid var(--border-col,var(--border));border-radius:14px;
   overflow:auto;backdrop-filter:blur(10px);}
 table{width:100%;border-collapse:collapse;font-size:13px;}
-thead tr:first-child th{background:rgba(21,101,192,.5);padding:9px 8px;
+thead tr:first-child th{background:var(--bg-table-head,rgba(21,101,192,.5));padding:9px 8px;
   font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;
-  color:var(--accent);text-align:center;border-bottom:1px solid var(--border);white-space:nowrap;}
-thead tr:last-child th{background:rgba(21,101,192,.3);padding:7px 8px;font-size:11px;
-  font-weight:600;color:rgba(207,228,255,.8);text-align:center;border-bottom:2px solid var(--border);}
+  color:#fff;text-align:center;border-bottom:1px solid var(--border-col,var(--border));white-space:nowrap;}
+thead tr:last-child th{background:rgba(21,101,192,.35);padding:7px 8px;font-size:11px;
+  font-weight:600;color:rgba(207,228,255,.9);text-align:center;border-bottom:2px solid var(--border-col,var(--border));}
+[data-theme="light"] thead tr:last-child th{color:#1a3a6e;}
 tbody tr{transition:.15s;}
-tbody tr:hover{background:rgba(0,229,255,.04);}
-tbody tr.subtotal td{background:rgba(21,101,192,.2);font-weight:600;font-size:12px;color:var(--sky);}
-tbody tr.grand-total td{background:rgba(0,229,255,.08);font-weight:700;font-size:13px;color:var(--accent);}
-td{padding:8px;text-align:center;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle;}
+tbody tr:hover{background:rgba(21,101,192,.06);}
+tbody tr.subtotal td{background:var(--subtotal-bg,rgba(21,101,192,.2));font-weight:600;font-size:12px;color:var(--sky);}
+tbody tr.grand-total td{background:var(--grand-bg,rgba(0,229,255,.08));font-weight:700;font-size:13px;color:var(--accent);}
+td{padding:8px;text-align:center;border-bottom:1px solid var(--td-border,rgba(255,255,255,.05));vertical-align:middle;}
 td.cls{text-align:left;font-weight:600;color:var(--white);padding-left:12px;}
 td.sr{color:var(--text);font-size:11px;}
 td.calc{color:var(--sky);font-weight:600;}
@@ -176,7 +196,7 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
 /* ── ADMIN PANEL ── */
 .admin-grid{display:grid;grid-template-columns:340px 1fr;gap:18px;}
 @media(max-width:860px){.admin-grid{grid-template-columns:1fr;}}
-.panel{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:18px;backdrop-filter:blur(10px);}
+.panel{background:var(--bg-card,var(--glass));border:1px solid var(--border-col,var(--border));border-radius:14px;padding:18px;backdrop-filter:blur(10px);}
 .panel-title{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--accent);margin-bottom:14px;}
 .std-block{margin-bottom:14px;}
 .std-header{display:flex;align-items:center;justify-content:space-between;
@@ -213,7 +233,7 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
   transform:translateY(80px);opacity:0;transition:.3s;z-index:1500;
   box-shadow:0 8px 30px rgba(0,200,83,.4);}
 #toast.show{transform:translateY(0);opacity:1;}
-.chart-container{background:var(--glass);border:1px solid var(--border);border-radius:14px;
+.chart-container{background:var(--bg-card,var(--glass));border:1px solid var(--border-col,var(--border));border-radius:14px;
   padding:18px;margin-top:18px;backdrop-filter:blur(10px);}
 .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
 @media(max-width:700px){.chart-grid{grid-template-columns:1fr;}}
@@ -269,6 +289,54 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
   20%,60%{transform:translateX(-8px) scale(1) translateY(0)}
   40%,80%{transform:translateX(8px) scale(1) translateY(0)}}
 
+/* ── LIGHT THEME OVERRIDES ── */
+[data-theme="light"] header{
+  background:linear-gradient(135deg,#1565c0,#1976d2 50%,#0277bd);
+}
+[data-theme="light"] nav{
+  background:#e8eef8;
+  border-bottom:1px solid rgba(21,101,192,.2);
+}
+[data-theme="light"] .tab{color:rgba(26,35,64,.5);}
+[data-theme="light"] .tab:hover{color:#1565c0;background:rgba(21,101,192,.08);}
+[data-theme="light"] .tab.active{color:#1565c0;background:rgba(21,101,192,.1);border-color:rgba(21,101,192,.2);border-bottom-color:#e8eef8;}
+[data-theme="light"] main{background:#eef2fb;}
+[data-theme="light"] .sec-title{color:#1a2340;}
+[data-theme="light"] .sec-sub{color:#334e7a;}
+[data-theme="light"] .stat-card .lbl{color:#334e7a;}
+[data-theme="light"] .chart-title{color:#1565c0;}
+[data-theme="light"] .panel-title{color:#1565c0;}
+[data-theme="light"] .working-days-box{background:rgba(255,152,0,.05);border-color:rgba(255,152,0,.3);color:#7c5000;}
+[data-theme="light"] .holiday-banner{background:rgba(255,152,0,.08);color:#b85c00;}
+[data-theme="light"] .holiday-tag{background:rgba(255,152,0,.1);color:#b85c00;border-color:rgba(255,152,0,.3);}
+[data-theme="light"] .holiday-manager{background:rgba(255,255,255,.9);border-color:rgba(255,152,0,.25);}
+[data-theme="light"] .fb-notice{background:rgba(255,152,0,.06);color:#7c5000;}
+[data-theme="light"] #adminLoginOverlay{background:rgba(235,240,255,.92);}
+[data-theme="light"] .login-box{background:linear-gradient(145deg,#e8f0ff,#d4e4ff);border-color:rgba(21,101,192,.3);}
+[data-theme="light"] .login-box h2,.login-box .sub{color:#1a2340;}
+[data-theme="light"] .login-field input{background:rgba(255,255,255,.8);border-color:rgba(21,101,192,.25);color:#1a2340;}
+[data-theme="light"] .login-field label{color:#334e7a;}
+[data-theme="light"] .btn-cancel-login{color:#334e7a;border-color:rgba(21,101,192,.2);}
+[data-theme="light"] .div-card{background:rgba(21,101,192,.04);border-color:rgba(21,101,192,.12);}
+[data-theme="light"] .div-field label{color:#334e7a;}
+[data-theme="light"] .div-field input{background:rgba(21,101,192,.06);border-color:rgba(21,101,192,.2);color:#1a2340;}
+[data-theme="light"] .std-header{background:rgba(21,101,192,.1);border-color:rgba(21,101,192,.15);}
+[data-theme="light"] .std-header h3{color:#1a2340;}
+[data-theme="light"] .std-badge{background:rgba(21,101,192,.12);color:#1565c0;}
+[data-theme="light"] .add-div-row{background:rgba(21,101,192,.04);border-color:rgba(21,101,192,.2);}
+[data-theme="light"] .sum-chip{background:rgba(21,101,192,.08);color:#334e7a;}
+[data-theme="light"] td.cls{color:#1a2340;}
+[data-theme="light"] td.sr{color:#334e7a;}
+[data-theme="light"] td.calc{color:#1565c0;}
+[data-theme="light"] .badge-present{color:#00963a;}
+[data-theme="light"] .badge-absent{color:#c0001c;}
+[data-theme="light"] tbody tr:hover{background:rgba(21,101,192,.05);}
+[data-theme="light"] tbody tr.subtotal td{color:#1565c0;}
+[data-theme="light"] tbody tr.grand-total td{color:#1565c0;}
+[data-theme="light"] td.editable input{background:rgba(21,101,192,.08);border-color:rgba(21,101,192,.2);color:#1a2340;}
+[data-theme="light"] .role-select{background:rgba(255,255,255,.2);color:#fff;}
+[data-theme="light"] #themeToggleBtn{background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3);}
+
 /* ── PRINT STYLES ── */
 @media print{
   header,nav,#adminLoginOverlay,#toast,.fb-notice,.controls,
@@ -294,7 +362,7 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
 
 <!-- ═══ HEADER ═══ -->
 <header>
-  <div class="logo-circle">GHSS<br>KHANVEL<br>1969</div>
+  <div class="logo-circle">GHSS<br>KHANVEL<br>(MM)</div>
   <div class="header-text">
     <h1>GOVT. HIGHER SECONDARY SCHOOL, KHANVEL</h1>
     <p>Marathi Medium &nbsp;|&nbsp; UT of DNH &amp; DD &nbsp;|&nbsp; Attendance Management Portal</p>
@@ -308,6 +376,14 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
       🔐 Admin Active
       <button onclick="adminLogout()">✕ Logout</button>
     </div>
+    <!-- Theme Toggle -->
+    <button id="themeToggleBtn" onclick="toggleTheme()"
+      title="Toggle Light/Dark Theme"
+      style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+        border-radius:8px;padding:6px 10px;color:#fff;font-size:16px;cursor:pointer;
+        transition:.2s;display:flex;align-items:center;gap:5px;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;">
+      🌙 Dark
+    </button>
     <select class="role-select" id="roleSelect" onchange="switchRole(this.value)">
       <option value="teacher">👩‍🏫 Teacher</option>
       <option value="principal">🏫 Principal</option>
@@ -430,7 +506,10 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
     </div>
 
     <div class="chart-container">
-      <div class="chart-title">📈 Class-wise Attendance % — Holiday Adjusted</div>
+      <div class="chart-title">📊 Attendance Charts — Holiday Adjusted</div>
+      <div style="font-size:12px;color:var(--text-sub,var(--text));margin-bottom:14px;">
+        Left: Class-wise attendance % (green=good, orange=monitor, red=critical) &nbsp;|&nbsp; Right: Present % vs Absent % comparison
+      </div>
       <div class="chart-grid">
         <div><canvas id="barChart"></canvas></div>
         <div><canvas id="pieChart"></canvas></div>
@@ -444,7 +523,10 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
     <p class="sec-sub">Principal's live overview — attendance data updates automatically as teachers save.</p>
     <div class="stats-row" id="dashStats"></div>
     <div class="chart-container">
-      <div class="chart-title">📈 Class-wise Attendance % — Current Month</div>
+      <div class="chart-title">📊 Live Attendance Analytics</div>
+      <div style="font-size:12px;color:var(--text-sub,var(--text));margin-bottom:14px;">
+        Left: Class-wise monthly attendance % &nbsp;|&nbsp; Right: Day-by-day trend for current month (real data from Firebase)
+      </div>
       <div class="chart-grid">
         <div><canvas id="dashBar"></canvas></div>
         <div><canvas id="dashLine"></canvas></div>
@@ -595,6 +677,30 @@ function toast(msg, type='success'){
   clearTimeout(t._timer);
   t._timer = setTimeout(()=>t.classList.remove('show'), 3200);
 }
+
+function toggleTheme(){
+  const html = document.documentElement;
+  const isLight = html.getAttribute('data-theme') === 'light';
+  const newTheme = isLight ? 'dark' : 'light';
+  html.setAttribute('data-theme', newTheme);
+  localStorage.setItem('sat-theme', newTheme);
+  const btn = $('themeToggleBtn');
+  if(btn) btn.innerHTML = newTheme === 'light' ? '🌙 Dark' : '☀️ Light';
+  // Rebuild charts with new text colors if visible
+  if($('monthly').classList.contains('active')) loadMonthly();
+  if($('summary').classList.contains('active')) buildDashboard();
+}
+
+// Apply saved theme on load
+(function(){
+  const saved = localStorage.getItem('sat-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  // Update button after DOM ready
+  window.addEventListener('DOMContentLoaded', ()=>{
+    const btn = $('themeToggleBtn');
+    if(btn) btn.innerHTML = saved === 'light' ? '🌙 Dark' : '☀️ Light';
+  });
+})();
 
 function showSync(msg){
   $('syncStatus').innerHTML = `<span class="sync-pulse"></span>${msg}`;
@@ -1010,6 +1116,36 @@ async function loadMonthly(){
       <td class="pct" style="color:var(--sky)">${spct}%</td>`;
   });
 
+  // ── Grand Total row ──
+  const allCls = CLASSES;
+  let gRg=0,gRb=0,gPg=0,gPb=0,gMaxG=0,gMaxB=0;
+  allCls.forEach(c => {
+    let totalPG=0, totalPB=0;
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    for(let d=1; d<=daysInMonth; d++){
+      const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      if(isHoliday(ds)) continue;
+      if(fbData && fbData[ds] && fbData[ds][c.name]){
+        totalPG += fbData[ds][c.name].pg||0;
+        totalPB += fbData[ds][c.name].pb||0;
+      } else if(localStore[`${c.name}_${ds}`]){
+        totalPG += localStore[`${c.name}_${ds}`].pg||0;
+        totalPB += localStore[`${c.name}_${ds}`].pb||0;
+      }
+    }
+    gRg+=c.roll_g; gRb+=c.roll_b;
+    gPg+=totalPG; gPb+=totalPB;
+    gMaxG+=c.roll_g*workingDays; gMaxB+=c.roll_b*workingDays;
+  });
+  const gPct = (gMaxG+gMaxB)>0 ? ((gPg+gPb)/(gMaxG+gMaxB)*100).toFixed(1) : '0.0';
+  const gtRow = body.insertRow(); gtRow.className='grand-total';
+  gtRow.innerHTML = `<td></td><td class="cls">🏫 SCHOOL TOTAL</td>
+    <td>${gRg}</td><td>${gRb}</td><td>${gRg+gRb}</td>
+    <td>${gPg}</td><td>${gPb}</td><td>${gPg+gPb}</td>
+    <td>${gMaxG-gPg}</td><td>${gMaxB-gPb}</td><td>${(gMaxG+gMaxB)-(gPg+gPb)}</td>
+    <td>${workingDays}</td>
+    <td class="pct" style="color:var(--accent)">${gPct}%</td>`;
+
   buildMonthlyCharts(chartData);
   toast('✅ Monthly report generated!');
 }
@@ -1042,31 +1178,76 @@ function downloadCSV(){
   toast('⬇️ CSV downloaded!');
 }
 
+function getChartTextColor(){
+  return document.documentElement.getAttribute('data-theme')==='light' ? '#1a2340' : '#cfe4ff';
+}
+function getChartGridColor(){
+  return document.documentElement.getAttribute('data-theme')==='light' ? 'rgba(0,0,0,.07)' : 'rgba(255,255,255,.07)';
+}
+
 function buildMonthlyCharts(data){
   const labels = data.map(d=>d.name);
   const pcts   = data.map(d=>d.pct);
   const colors = pcts.map(p=>p<75?'#ff1744':p<85?'#ff9800':'#00c853');
-  const baseOpts = { responsive:true,
-    plugins:{ legend:{ labels:{ color:'#cfe4ff' } } },
-    scales:{
-      x:{ ticks:{ color:'#cfe4ff' }, grid:{ color:'rgba(255,255,255,.05)' } },
-      y:{ min:0, max:100, ticks:{ color:'#cfe4ff', callback:v=>v+'%' }, grid:{ color:'rgba(255,255,255,.08)' } }
-    }
-  };
+  const tc = getChartTextColor();
+  const gc = getChartGridColor();
+
+  // ── Chart 1: Attendance % bar chart ──
   if(barChart) barChart.destroy();
   barChart = new Chart($('barChart'),{
     type:'bar',
-    data:{ labels, datasets:[{ label:'Attendance %', data:pcts, backgroundColor:colors, borderRadius:6, borderSkipped:false }]},
-    options:{ ...baseOpts, plugins:{ ...baseOpts.plugins, tooltip:{ callbacks:{ label:c=>c.raw+'%' } } } }
+    data:{ labels, datasets:[{
+      label:'Attendance %',
+      data: pcts,
+      backgroundColor: colors,
+      borderRadius:6,
+      borderSkipped:false
+    }]},
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{ labels:{ color:tc } },
+        tooltip:{ callbacks:{ label:c=>c.raw.toFixed(1)+'%' } },
+        title:{ display:true, text:'Class-wise Attendance %', color:tc, font:{ size:13 } }
+      },
+      scales:{
+        x:{ ticks:{ color:tc }, grid:{ color:gc } },
+        y:{ min:0, max:100,
+          ticks:{ color:tc, callback:v=>v+'%' },
+          grid:{ color:gc },
+          border:{ dash:[4,4] }
+        }
+      }
+    }
   });
+
+  // ── Chart 2: Present % vs Absent % side-by-side grouped bar ──
+  // This correctly shows each class's present% and absent% as real values
+  const presentPcts = pcts;
+  const absentPcts  = pcts.map(p => parseFloat((100-p).toFixed(1)));
   if(pieChart) pieChart.destroy();
   pieChart = new Chart($('pieChart'),{
-    type:'doughnut',
-    data:{ labels, datasets:[{ data:pcts,
-      backgroundColor:['#29b6f6','#00e5ff','#00c853','#ffd600','#ff9800','#ff5252','#ab47bc','#42a5f5','#66bb6a','#ef5350','#26c6da','#9ccc65'],
-      borderWidth:2, borderColor:'#0a1628' }]},
-    options:{ responsive:true, plugins:{ legend:{ position:'right', labels:{ color:'#cfe4ff', font:{ size:10 } } },
-      tooltip:{ callbacks:{ label:c=>`${c.label}: ${c.raw}%` } } } }
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'Present %', data:presentPcts, backgroundColor:'rgba(0,200,83,.8)',  borderRadius:4, borderSkipped:false },
+      { label:'Absent %',  data:absentPcts,  backgroundColor:'rgba(255,23,68,.7)', borderRadius:4, borderSkipped:false }
+    ]},
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{ labels:{ color:tc } },
+        tooltip:{ callbacks:{ label:c=>c.dataset.label+': '+c.raw.toFixed(1)+'%' } },
+        title:{ display:true, text:'Present % vs Absent % per Class', color:tc, font:{ size:13 } }
+      },
+      scales:{
+        x:{ ticks:{ color:tc }, grid:{ color:gc } },
+        y:{ min:0, max:100,
+          stacked:false,
+          ticks:{ color:tc, callback:v=>v+'%' },
+          grid:{ color:gc }
+        }
+      }
+    }
   });
 }
 
@@ -1114,7 +1295,7 @@ async function buildDashboard(){
           if(roll>0) { sum += (k.pg+k.pb)/roll*100; cnt++; }
         }
       });
-      return cnt>0 ? parseFloat((sum/cnt).toFixed(1)) : 80+Math.floor(Math.random()*15);
+      return cnt>0 ? parseFloat((sum/cnt).toFixed(1)) : 0; // 0 = no attendance data yet
     });
   } else {
     // Stable demo values (seeded by class index, not random per render)
@@ -1124,54 +1305,109 @@ async function buildDashboard(){
   const colors = pcts.map(p=>p<75?'#ff1744':p<85?'#ff9800':'#00c853');
 
   // Alert table
-  const alerts = CLASSES.map((c,i)=>({name:c.name,pct:pcts[i]})).filter(x=>x.pct<85);
+  // Show classes below 85% as needing attention
+  const alerts = CLASSES.map((c,i)=>({name:c.name,pct:pcts[i]})).filter(x=>x.pct<85).sort((a,b)=>a.pct-b.pct);
+  const alertBg = document.documentElement.getAttribute('data-theme')==='light' ? 'rgba(0,0,0,.04)' : 'rgba(255,255,255,.02)';
   $('alertTable').innerHTML = alerts.length
-    ? `<table style="width:100%;font-size:13px;">
-        <thead><tr>
-          <th style="text-align:left;padding:8px;color:var(--text);font-weight:600;">Class</th>
-          <th style="padding:8px;color:var(--text);font-weight:600;">Attendance %</th>
-          <th style="padding:8px;color:var(--text);font-weight:600;">Status</th>
+    ? `<table style="width:100%;font-size:13px;border-collapse:collapse;">
+        <thead><tr style="border-bottom:2px solid rgba(255,23,68,.3)">
+          <th style="text-align:left;padding:10px 8px;color:var(--text-sub,var(--text));font-weight:600;font-size:11px;letter-spacing:.5px;">CLASS</th>
+          <th style="padding:10px 8px;color:var(--text-sub,var(--text));font-weight:600;font-size:11px;letter-spacing:.5px;">ATTENDANCE %</th>
+          <th style="padding:10px 8px;color:var(--text-sub,var(--text));font-weight:600;font-size:11px;letter-spacing:.5px;">STATUS</th>
+          <th style="padding:10px 8px;color:var(--text-sub,var(--text));font-weight:600;font-size:11px;letter-spacing:.5px;">ACTION NEEDED</th>
         </tr></thead>
-        <tbody>${alerts.map(a=>`<tr style="border-bottom:1px solid rgba(255,255,255,.05)">
-          <td style="padding:8px;font-weight:700;">${a.name}</td>
-          <td style="padding:8px;text-align:center;color:${a.pct<75?'#ff5252':'#ff9800'};font-weight:700;">${a.pct}%</td>
-          <td style="padding:8px;text-align:center;">
-            <span style="background:${a.pct<75?'rgba(255,23,68,.2)':'rgba(255,152,0,.2)'};
-              color:${a.pct<75?'#ff5252':'#ff9800'};padding:2px 10px;border-radius:10px;font-size:11px;">
-              ${a.pct<75?'Critical':'Monitor'}
+        <tbody>${alerts.map(a=>`<tr style="border-bottom:1px solid var(--td-border,rgba(255,255,255,.05))">
+          <td style="padding:10px 8px;font-weight:700;color:var(--text-main,#fff);">${a.name}</td>
+          <td style="padding:10px 8px;text-align:center;color:${a.pct<75?'#ff5252':'#ff9800'};font-weight:800;font-size:16px;font-family:'Rajdhani',sans-serif;">${a.pct.toFixed(1)}%</td>
+          <td style="padding:10px 8px;text-align:center;">
+            <span style="background:${a.pct<75?'rgba(255,23,68,.15)':'rgba(255,152,0,.15)'};
+              color:${a.pct<75?'#ff5252':'#ff9800'};padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;
+              border:1px solid ${a.pct<75?'rgba(255,23,68,.3)':'rgba(255,152,0,.3)'};">
+              ${a.pct<75?'🔴 CRITICAL':'🟡 MONITOR'}
             </span>
+          </td>
+          <td style="padding:10px 8px;text-align:center;font-size:12px;color:var(--text-sub,var(--text));">
+            ${a.pct<75?'Immediate intervention required':'Track closely this week'}
           </td>
         </tr>`).join('')}</tbody>
       </table>`
-    : '<p style="color:var(--present);font-size:13px;">✅ All classes above 85% — Good standing!</p>';
+    : '<p style="color:var(--present);font-size:14px;padding:12px 0;">✅ All classes above 85% — Excellent standing!</p>';
+
+  const tc2 = getChartTextColor();
+  const gc2 = getChartGridColor();
 
   if(dashBarChart) dashBarChart.destroy();
   dashBarChart = new Chart($('dashBar'),{
     type:'bar',
-    data:{ labels, datasets:[{ label:'Avg Attendance %', data:pcts, backgroundColor:colors, borderRadius:6, borderSkipped:false }]},
+    data:{ labels, datasets:[{
+      label:'Monthly Attendance %',
+      data:pcts,
+      backgroundColor:colors,
+      borderRadius:6,
+      borderSkipped:false
+    }]},
     options:{ responsive:true,
-      plugins:{ legend:{ labels:{ color:'#cfe4ff' } }, tooltip:{ callbacks:{ label:c=>c.raw+'%' } } },
+      plugins:{
+        legend:{ labels:{ color:tc2 } },
+        tooltip:{ callbacks:{ label:c=>c.raw.toFixed(1)+'%' } },
+        title:{ display:true, text:'Class-wise Monthly Attendance %', color:tc2, font:{size:13} }
+      },
       scales:{
-        x:{ ticks:{ color:'#cfe4ff' }, grid:{ color:'rgba(255,255,255,.05)' } },
-        y:{ min:0, max:100, ticks:{ color:'#cfe4ff', callback:v=>v+'%' }, grid:{ color:'rgba(255,255,255,.08)' } }
+        x:{ ticks:{ color:tc2 }, grid:{ color:gc2 } },
+        y:{ min:0, max:100, ticks:{ color:tc2, callback:v=>v+'%' }, grid:{ color:gc2 } }
       }
     }
   });
 
-  // Trend line — real working days
-  const days  = Array.from({length:workingDays}, (_,i)=>`D${i+1}`);
-  const trend = days.map((_,i)=>72+((i*6+13)%25)); // stable demo, not random
+  // ── Real trend line from Firebase ──
+  // Build day-by-day attendance % for current month using real FB data
+  const fbAll2 = window._fbReady ? (await window.fbGet('attendance') || {}) : {};
+  const daysInCurMonth = new Date(year, month+1, 0).getDate();
+  const trendLabels = [], trendData = [];
+  const totalRoll = CLASSES.reduce((a,c)=>a+c.roll_g+c.roll_b, 0);
+
+  for(let d=1; d<=daysInCurMonth; d++){
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if(isHoliday(ds)) continue; // skip holidays & Sundays
+    const dayDate = new Date(ds+'T12:00:00');
+    if(dayDate > new Date()) break; // don't plot future dates
+    trendLabels.push(`${d}/${month+1}`);
+    let dayPresent = 0;
+    CLASSES.forEach(c => {
+      if(fbAll2[ds] && fbAll2[ds][c.name]){
+        dayPresent += (fbAll2[ds][c.name].pg||0) + (fbAll2[ds][c.name].pb||0);
+      } else if(localStore[`${c.name}_${ds}`]){
+        dayPresent += (localStore[`${c.name}_${ds}`].pg||0) + (localStore[`${c.name}_${ds}`].pb||0);
+      }
+    });
+    const dayPct = totalRoll>0 ? parseFloat((dayPresent/totalRoll*100).toFixed(1)) : 0;
+    trendData.push(dayPct);
+  }
+
   if(dashLineChart) dashLineChart.destroy();
   dashLineChart = new Chart($('dashLine'),{
     type:'line',
-    data:{ labels:days, datasets:[{ label:'Daily Attendance %', data:trend,
-      borderColor:'#00e5ff', backgroundColor:'rgba(0,229,255,.07)',
-      pointBackgroundColor:'#00e5ff', pointRadius:3, tension:0.4, fill:true }]},
+    data:{ labels: trendLabels.length ? trendLabels : ['No data'],
+      datasets:[{
+        label:'Daily Attendance %',
+        data: trendData.length ? trendData : [0],
+        borderColor:'#00e5ff',
+        backgroundColor:'rgba(0,229,255,.08)',
+        pointBackgroundColor: trendData.map(v=>v<75?'#ff1744':v<85?'#ff9800':'#00c853'),
+        pointRadius:4,
+        tension:0.35,
+        fill:true
+      }]
+    },
     options:{ responsive:true,
-      plugins:{ legend:{ labels:{ color:'#cfe4ff' } } },
+      plugins:{
+        legend:{ labels:{ color:tc2 } },
+        title:{ display:true, text:'Day-wise Attendance % (Current Month)', color:tc2, font:{size:13} },
+        tooltip:{ callbacks:{ label:c=>c.raw.toFixed(1)+'%' } }
+      },
       scales:{
-        x:{ ticks:{ color:'#cfe4ff', font:{ size:10 } }, grid:{ color:'rgba(255,255,255,.05)' } },
-        y:{ min:0, max:100, ticks:{ color:'#cfe4ff', callback:v=>v+'%' }, grid:{ color:'rgba(255,255,255,.08)' } }
+        x:{ ticks:{ color:tc2, font:{size:10} }, grid:{ color:gc2 } },
+        y:{ min:0, max:100, ticks:{ color:tc2, callback:v=>v+'%' }, grid:{ color:gc2 } }
       }
     }
   });

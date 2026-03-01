@@ -467,14 +467,14 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
 
     <div class="controls">
       <label>Month:</label>
-      <select class="ctrl" id="selMonth">
+      <select class="ctrl" id="selMonth" onchange="onMonthYearChange()">
         <option>January</option><option>February</option><option>March</option><option>April</option>
         <option>May</option><option>June</option><option>July</option><option>August</option>
         <option>September</option><option>October</option><option>November</option><option>December</option>
       </select>
       <label>Year:</label>
-      <select class="ctrl" id="selYear"></select>
-      <button class="btn btn-primary" onclick="loadMonthly()">📊 Generate Report</button>
+      <select class="ctrl" id="selYear" onchange="onMonthYearChange()"></select>
+      <button class="btn btn-primary" onclick="loadMonthly()">📊 Refresh Report</button>
       <button class="btn btn-gold"    onclick="printPage()">🖨️ Print Report</button>
       <button class="btn btn-teal"    onclick="downloadCSV()">⬇️ Save as CSV</button>
     </div>
@@ -523,9 +523,9 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
     <p class="sec-sub">Principal's live overview — attendance data updates automatically as teachers save.</p>
     <div class="stats-row" id="dashStats"></div>
     <div class="chart-container">
-      <div class="chart-title">📊 Live Attendance Analytics</div>
-      <div style="font-size:12px;color:var(--text-sub,var(--text));margin-bottom:14px;">
-        Left: Class-wise monthly attendance % &nbsp;|&nbsp; Right: Day-by-day trend for current month (real data from Firebase)
+      <div class="chart-title" id="dashChartTitle">📊 Live Attendance Analytics</div>
+      <div style="font-size:12px;color:var(--text-sub,var(--text));margin-bottom:14px;" id="dashChartSub">
+        Left: Class-wise monthly attendance % &nbsp;|&nbsp; Right: Day-by-day attendance trend (real Firebase data)
       </div>
       <div class="chart-grid">
         <div><canvas id="dashBar"></canvas></div>
@@ -562,6 +562,27 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
       <div style="margin-top:8px;font-size:12px;color:var(--text);">
         💡 Sundays auto-excluded. Add school-specific holidays (Diwali, Independence Day, etc.) above.
       </div>
+    </div>
+
+    <!-- ── Roll History Panel ── -->
+    <div class="panel" style="margin-bottom:18px;border-color:rgba(0,229,255,.3);">
+      <div class="panel-title">📸 Roll Strength History
+        <span style="font-size:12px;color:var(--text-sub,var(--text));font-weight:400;margin-left:8px;">
+          Automatic snapshots of student count per month — ensures correct % calculations
+        </span>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+        <button class="btn btn-primary btn-sm" onclick="manualSnapshot()">
+          📸 Snapshot Current Month Now
+        </button>
+        <button class="btn btn-teal btn-sm" onclick="renderRollHistoryTable()">
+          🔄 Refresh History View
+        </button>
+        <span style="font-size:12px;color:var(--text-sub,var(--text));">
+          A snapshot is auto-saved every time you click "Apply &amp; Save Structure"
+        </span>
+      </div>
+      <div id="rollHistoryTable" style="overflow:auto;max-height:280px;"></div>
     </div>
 
     <div class="admin-grid">
@@ -641,6 +662,12 @@ let localStore          = {};   // { "CLASS_DATE": {pg,pb} }
 let monthlyReportData   = [];   // populated by loadMonthly() for CSV export
 let fbListenerUnsub     = null; // current firebase listener unsubscriber
 let barChart, pieChart, dashBarChart, dashLineChart;
+let fbAttendanceCache   = null; // cached Firebase attendance data
+let fbCacheTime         = 0;   // timestamp of last cache fill
+const FB_CACHE_TTL      = 30000; // 30s cache — avoids repeated Firebase reads
+let rollHistory         = {};  // { "YYYY-MM": { "IX-A": {rg,rb}, ... } }
+// rollHistory is the source of truth for "what were the roll numbers in month X"
+// Structure in Firebase: config/rollHistory/YYYY-MM/<className> → {rg, rb}
 
 // ── INIT ──
 const todayDate = new Date();
@@ -650,6 +677,86 @@ $('selMonth').selectedIndex = todayDate.getMonth();
 $('selYear').value        = todayDate.getFullYear();
 
 setTimeout(initApp, 900); // wait for Firebase module
+
+// ── SHARED MONTH/YEAR GETTERS — single source of truth ──
+function getSelectedMonth(){ return $('selMonth').selectedIndex; }
+function getSelectedYear() { return parseInt($('selYear').value); }
+
+// Sync today's date month/year INTO the selMonth/selYear dropdowns
+function syncDateToMonthYear(dateStr){
+  const d = new Date(dateStr + 'T12:00:00');
+  $('selMonth').selectedIndex = d.getMonth();
+  $('selYear').value          = d.getFullYear();
+}
+// Sync selMonth/selYear INTO the date input (set to 1st of that month)
+function syncMonthYearToDate(){
+  const m = getSelectedMonth(), y = getSelectedYear();
+  const iso = `${y}-${String(m+1).padStart(2,'0')}-01`;
+  // Only update date if it's not in the same month already
+  const cur = new Date($('selDate').value + 'T12:00:00');
+  if(cur.getMonth()!==m || cur.getFullYear()!==y){
+    $('selDate').value = iso;
+  }
+}
+
+// Invalidate Firebase cache (call after saving attendance)
+function invalidateFbCache(){ fbCacheTime = 0; }
+
+// ── ROLL HISTORY HELPERS ──────────────────────────────────────────
+
+// Returns "YYYY-MM" key for a given year+month (0-indexed month)
+function monthKey(year, month){
+  return `${year}-${String(month+1).padStart(2,'0')}`;
+}
+
+// Snapshot current classStructure into rollHistory for the given month.
+// Called automatically when admin clicks "Apply & Save Structure".
+// Also called at app start if no snapshot exists for current month yet.
+async function snapshotRollForMonth(year, month){
+  const key = monthKey(year, month);
+  if(!rollHistory[key]) rollHistory[key] = {};
+  const CLASSES = getClasses();
+  CLASSES.forEach(c => {
+    rollHistory[key][c.name] = { rg: c.roll_g, rb: c.roll_b };
+  });
+  // Persist to Firebase
+  if(window._fbReady){
+    await window.fbSet(`config/rollHistory/${key}`, rollHistory[key]);
+  }
+  console.log(`📸 Roll snapshot saved for ${key}`, rollHistory[key]);
+}
+
+// Get the roll numbers for a specific class in a specific month.
+// Priority: 1) rollHistory for that month, 2) current classStructure (fallback)
+function getRollForMonth(className, year, month){
+  const key = monthKey(year, month);
+  if(rollHistory[key] && rollHistory[key][className]){
+    return rollHistory[key][className]; // { rg, rb }
+  }
+  // Fallback: find in current classStructure
+  const c = getClasses().find(x => x.name === className);
+  return c ? { rg: c.roll_g, rb: c.roll_b } : { rg: 0, rb: 0 };
+}
+
+// Load all rollHistory from Firebase on startup
+async function loadRollHistory(){
+  if(!window._fbReady) return;
+  const data = await window.fbGet('config/rollHistory');
+  if(data) rollHistory = data;
+  console.log('📚 Roll history loaded:', Object.keys(rollHistory));
+}
+
+// Cached Firebase attendance fetch — avoids slow repeated reads
+async function getFbAttendance(){
+  if(!window._fbReady) return null;
+  const now = Date.now();
+  if(fbAttendanceCache && (now - fbCacheTime) < FB_CACHE_TTL){
+    return fbAttendanceCache;
+  }
+  fbAttendanceCache = await window.fbGet('attendance') || {};
+  fbCacheTime = now;
+  return fbAttendanceCache;
+}
 
 // ══════════════════════════════════════════
 // UTILITIES
@@ -762,11 +869,26 @@ async function loadFromFirebase(){
   if(hols)         { holidays = hols; }
   if(autoS !== null){ autoExcludeSundays = autoS; $('autoSundays').checked = autoS; }
 
+  // Load full roll history (all months)
+  await loadRollHistory();
+
+  // Auto-snapshot current month if admin hasn't already done so this month.
+  // This handles schools that update mid-month — we capture the state at first load.
+  const now = new Date();
+  const curKey = monthKey(now.getFullYear(), now.getMonth());
+  if(!rollHistory[curKey]){
+    await snapshotRollForMonth(now.getFullYear(), now.getMonth());
+  }
+
   renderAdminEditor();
   renderHolidayList();
   buildDailyTable($('selDate').value);
   updateAllTotals($('selDate').value);
   attachDateListener($('selDate').value);
+  // Pre-sync month/year dropdowns to match today's date
+  syncDateToMonthYear($('selDate').value);
+  // Pre-load working days so Monthly tab is ready instantly
+  showWorkingDaysSummaryInstant(getSelectedYear(), getSelectedMonth());
 }
 
 function attachDateListener(date){
@@ -833,6 +955,9 @@ function addHoliday(){
   saveStructureToFirebase();
   toast(`🗓️ Holiday "${name}" added!`);
   updateHolidayBanner($('selDate').value);
+  // Instantly refresh working days box if monthly tab visible
+  showWorkingDaysSummaryInstant(getSelectedYear(), getSelectedMonth());
+  if($('monthly').classList.contains('active')) loadMonthly();
 }
 
 function removeHoliday(date){
@@ -841,6 +966,8 @@ function removeHoliday(date){
   saveStructureToFirebase();
   toast('🗑 Holiday removed','warn');
   updateHolidayBanner($('selDate').value);
+  showWorkingDaysSummaryInstant(getSelectedYear(), getSelectedMonth());
+  if($('monthly').classList.contains('active')) loadMonthly();
 }
 
 function onAutoSundaysChange(){
@@ -870,9 +997,47 @@ function renderHolidayList(){
 function onDateChange(){
   const date = $('selDate').value;
   $('printDateLabel').textContent = `Date: ${date}`;
+  // Sync the month/year dropdowns to match chosen date
+  syncDateToMonthYear(date);
   buildDailyTable(date);
   updateAllTotals(date);
-  attachDateListener(date);   // switch Firebase listener to new date
+  attachDateListener(date);
+}
+
+// Called instantly when selMonth or selYear changes
+function onMonthYearChange(){
+  const month = getSelectedMonth();
+  const year  = getSelectedYear();
+  // Sync date input to 1st of selected month
+  syncMonthYearToDate();
+  // Show working days summary immediately (no Firebase needed)
+  showWorkingDaysSummaryInstant(year, month);
+  // If monthly tab is active, reload it
+  if($('monthly').classList.contains('active')){
+    loadMonthly();
+  }
+  // Always refresh dashboard to match new month
+  if($('summary').classList.contains('active')){
+    buildDashboard();
+  }
+}
+
+// Show the working days / holidays box INSTANTLY without waiting for Firebase
+function showWorkingDaysSummaryInstant(year, month){
+  const { workingDays, holidayDates } = getMonthWorkingDays(year, month);
+  const wdBox = $('workingDaysSummary');
+  if(!wdBox) return;
+  wdBox.style.display = 'block';
+  const hTags = holidayDates.map(d => {
+    const lbl = new Date(d+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    const nm  = isSunday(d) ? 'Sunday' : (holidays[d] || '');
+    return `<span class="holiday-tag">📅 ${lbl}${nm?' – '+nm:''}</span>`;
+  }).join('');
+  wdBox.innerHTML = `
+    <strong style="color:var(--warn);">📅 ${workingDays} Working Days</strong> in
+    ${MONTH_NAMES[month]} ${year} &nbsp;|&nbsp;
+    <strong style="color:var(--absent);">${holidayDates.length} Days Excluded</strong> (Holidays + Sundays)
+    <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">${hTags}</div>`;
 }
 
 function updateHolidayBanner(date){
@@ -1018,8 +1183,12 @@ async function saveAttendance(){
     const payload = {};
     CLASSES.forEach(c => { payload[c.name] = localStore[`${c.name}_${date}`]||{pg:0,pb:0}; });
     const ok = await window.fbSet(`attendance/${date}`, payload);
-    if(ok) showSync('☁️ Synced to cloud');
-    else   showSync('⚠️ Cloud sync failed');
+    if(ok){
+      invalidateFbCache(); // Force fresh data on next tab view
+      showSync('☁️ Synced to cloud');
+    } else {
+      showSync('⚠️ Cloud sync failed');
+    }
   }
   toast('✅ Attendance saved!');
 }
@@ -1030,28 +1199,17 @@ async function saveAttendance(){
 async function loadMonthly(){
   const ph = $('monthlyPlaceholder');
   if(ph) ph.style.display='none';
-  const month = $('selMonth').selectedIndex;
-  const year  = parseInt($('selYear').value);
+  const month = getSelectedMonth();
+  const year  = getSelectedYear();
   const CLASSES = getClasses();
   const { workingDays, holidayDates } = getMonthWorkingDays(year, month);
 
-  // Working days summary
-  const wdBox = $('workingDaysSummary');
-  wdBox.style.display = 'block';
-  const hTags = holidayDates.map(d => {
-    const lbl = new Date(d+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'});
-    const nm  = isHoliday(d) ? (holidays[d]||'Sunday') : '';
-    return `<span class="holiday-tag">📅 ${lbl}${nm?' – '+nm:''}</span>`;
-  }).join('');
-  wdBox.innerHTML = `
-    <strong style="color:var(--warn);">📅 ${workingDays} Working Days</strong> in
-    ${MONTH_NAMES[month]} ${year} &nbsp;|&nbsp;
-    <strong style="color:var(--absent);">${holidayDates.length} Days Excluded</strong> (Holidays + Sundays)
-    <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">${hTags}</div>`;
+  // Show working days summary immediately (already shown by onMonthYearChange,
+  // but also update here in case loadMonthly was called directly)
+  showWorkingDaysSummaryInstant(year, month);
 
-  // Fetch Firebase month data
-  let fbData = null;
-  if(window._fbReady) fbData = await window.fbGet('attendance');
+  // Fetch Firebase data using cache (fast if recently loaded)
+  let fbData = await getFbAttendance();
 
   const body = $('monthlyBody');
   body.innerHTML = '';
@@ -1059,18 +1217,43 @@ async function loadMonthly(){
   monthlyReportData = [];  // reset CSV data
   const chartData = [];
 
+  // Show roll history badge — tells user which snapshot is being used
+  const histKey = monthKey(year, month);
+  const hasSnapshot = !!(rollHistory[histKey]);
+  const snapBadge = hasSnapshot
+    ? `<span style="background:rgba(0,200,83,.15);color:#00c853;border:1px solid rgba(0,200,83,.3);
+        border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600;margin-left:10px;">
+        📸 Using roll snapshot for ${MONTH_NAMES[month]} ${year}</span>`
+    : `<span style="background:rgba(255,152,0,.15);color:#ff9800;border:1px solid rgba(255,152,0,.3);
+        border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600;margin-left:10px;">
+        ⚠️ No snapshot — using current roll numbers</span>`;
+  const titleEl = document.querySelector('#monthly .sec-title');
+  if(titleEl){
+    const existing = titleEl.querySelector('.snap-badge');
+    if(existing) existing.remove();
+    const span = document.createElement('span');
+    span.className = 'snap-badge';
+    span.innerHTML = snapBadge;
+    titleEl.appendChild(span);
+  }
+
   STANDARDS.forEach(std => {
     const cls = CLASSES.filter(c=>c.std===std);
     if(!cls.length) return;
     let sg=0,sb=0,srg=0,srb=0,smaxG=0,smaxB=0;
 
     cls.forEach(c => {
+      // ★ KEY FIX: get roll numbers for THIS specific month, not current live values
+      const roll = getRollForMonth(c.name, year, month);
+      const rg   = roll.rg;   // girls on roll in that month
+      const rb   = roll.rb;   // boys on roll in that month
+
       let totalPG=0, totalPB=0;
       const daysInMonth = new Date(year, month+1, 0).getDate();
 
       for(let d=1; d<=daysInMonth; d++){
         const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        if(isHoliday(ds)) continue; // skip holidays
+        if(isHoliday(ds)) continue;
         if(fbData && fbData[ds] && fbData[ds][c.name]){
           totalPG += fbData[ds][c.name].pg||0;
           totalPB += fbData[ds][c.name].pb||0;
@@ -1080,32 +1263,37 @@ async function loadMonthly(){
         }
       }
 
-      const maxG = c.roll_g * workingDays;
-      const maxB = c.roll_b * workingDays;
+      const maxG = rg * workingDays;   // ★ uses historical roll, not current
+      const maxB = rb * workingDays;
       const pct  = (maxG+maxB)>0 ? ((totalPG+totalPB)/(maxG+maxB)*100).toFixed(1) : '0.0';
       const col  = pct<75?'color:#ff5252':pct<85?'color:#ff9800':'color:#00c853';
+      // Flag if historical roll differs from current (shows admin that a change was recorded)
+      const rollChanged = (rg !== c.roll_g || rb !== c.roll_b);
+      const changeMark  = rollChanged
+        ? ` <span title="Roll changed since ${MONTH_NAMES[month]}: now G=${c.roll_g} B=${c.roll_b}"
+              style="color:#ff9800;font-size:10px;cursor:help;">✎</span>`
+        : '';
 
       body.insertRow().innerHTML = `
-        <td class="sr">${sr++}</td><td class="cls">${c.name}</td>
-        <td>${c.roll_g}</td><td>${c.roll_b}</td><td class="calc">${c.roll_g+c.roll_b}</td>
+        <td class="sr">${sr++}</td>
+        <td class="cls">${c.name}${changeMark}</td>
+        <td>${rg}</td><td>${rb}</td><td class="calc">${rg+rb}</td>
         <td class="badge-present">${totalPG}</td><td class="badge-present">${totalPB}</td><td class="badge-present">${totalPG+totalPB}</td>
         <td class="badge-absent">${maxG-totalPG}</td><td class="badge-absent">${maxB-totalPB}</td><td class="badge-absent">${(maxG+maxB)-(totalPG+totalPB)}</td>
         <td class="calc">${workingDays}</td>
         <td class="pct" style="${col}">${pct}%</td>`;
 
       chartData.push({ name: c.name, pct: parseFloat(pct) });
-      sg+=c.roll_g; sb+=c.roll_b; srg+=totalPG; srb+=totalPB; smaxG+=maxG; smaxB+=maxB;
+      sg+=rg; sb+=rb; srg+=totalPG; srb+=totalPB; smaxG+=maxG; smaxB+=maxB;
 
-      // Store for CSV
       monthlyReportData.push({
-        class:c.name, rollG:c.roll_g, rollB:c.roll_b,
+        class:c.name, rollG:rg, rollB:rb,
         presentG:totalPG, presentB:totalPB,
         absentG:maxG-totalPG, absentB:maxB-totalPB,
         workingDays, pct
       });
     });
 
-    // Subtotal
     const spct = (smaxG+smaxB)>0 ? ((srg+srb)/(smaxG+smaxB)*100).toFixed(1) : '0.0';
     const sub = body.insertRow(); sub.className='subtotal';
     sub.innerHTML = `<td></td><td class="cls">STD ${std} TOTAL</td>
@@ -1116,10 +1304,11 @@ async function loadMonthly(){
       <td class="pct" style="color:var(--sky)">${spct}%</td>`;
   });
 
-  // ── Grand Total row ──
+  // ── Grand Total — also uses historical rolls ──
   const allCls = CLASSES;
   let gRg=0,gRb=0,gPg=0,gPb=0,gMaxG=0,gMaxB=0;
   allCls.forEach(c => {
+    const roll = getRollForMonth(c.name, year, month); // ★ historical
     let totalPG=0, totalPB=0;
     const daysInMonth = new Date(year, month+1, 0).getDate();
     for(let d=1; d<=daysInMonth; d++){
@@ -1133,9 +1322,9 @@ async function loadMonthly(){
         totalPB += localStore[`${c.name}_${ds}`].pb||0;
       }
     }
-    gRg+=c.roll_g; gRb+=c.roll_b;
+    gRg+=roll.rg; gRb+=roll.rb;
     gPg+=totalPG; gPb+=totalPB;
-    gMaxG+=c.roll_g*workingDays; gMaxB+=c.roll_b*workingDays;
+    gMaxG+=roll.rg*workingDays; gMaxB+=roll.rb*workingDays;
   });
   const gPct = (gMaxG+gMaxB)>0 ? ((gPg+gPb)/(gMaxG+gMaxB)*100).toFixed(1) : '0.0';
   const gtRow = body.insertRow(); gtRow.className='grand-total';
@@ -1257,45 +1446,53 @@ function buildMonthlyCharts(data){
 async function buildDashboard(){
   const CLASSES = getClasses();
   const total   = CLASSES.reduce((a,c)=>a+c.roll_g+c.roll_b, 0);
-  const date    = todayDate.toISOString().split('T')[0];
-  const month   = todayDate.getMonth();
-  const year    = todayDate.getFullYear();
+  // Use today for the "Today's Attendance" stat card
+  const date    = $('selDate').value || todayDate.toISOString().split('T')[0];
+  // Use SELECTED month/year (in sync with Monthly tab)
+  const month   = getSelectedMonth();
+  const year    = getSelectedYear();
   const { workingDays } = getMonthWorkingDays(year, month);
   const isHol   = isHoliday(date);
 
-  // Real present count from Firebase or localStore
+  // Real present count for selected date from cache
   let present = 0;
-  if(window._fbReady){
-    const td = await window.fbGet(`attendance/${date}`);
-    if(td) CLASSES.forEach(c=>{ if(td[c.name]){ present += (td[c.name].pg||0)+(td[c.name].pb||0); } });
+  const fbAll0 = await getFbAttendance();
+  if(fbAll0 && fbAll0[date]){
+    CLASSES.forEach(c=>{ if(fbAll0[date][c.name]){ present += (fbAll0[date][c.name].pg||0)+(fbAll0[date][c.name].pb||0); } });
   } else {
     CLASSES.forEach(c=>{ const k=localStore[`${c.name}_${date}`]||{pg:0,pb:0}; present+=k.pg+k.pb; });
   }
 
   const pct = total>0 ? (present/total*100).toFixed(1) : '0.0';
+  const selMonthName = MONTH_NAMES[month];
   $('dashStats').innerHTML = `
     <div class="stat-card" style="--c:#29b6f6"><div class="val">${total}</div><div class="lbl">Total Enrolled</div></div>
-    <div class="stat-card" style="--c:#00c853"><div class="val">${isHol?'–':present}</div><div class="lbl">Present Today</div></div>
-    <div class="stat-card" style="--c:#ff1744"><div class="val">${isHol?'–':total-present}</div><div class="lbl">Absent Today</div></div>
-    <div class="stat-card" style="--c:#ffd600"><div class="val">${isHol?'Holiday':pct+'%'}</div><div class="lbl">Today's %</div></div>
+    <div class="stat-card" style="--c:#00c853"><div class="val">${isHol?'–':present}</div><div class="lbl">Present (${date})</div></div>
+    <div class="stat-card" style="--c:#ff1744"><div class="val">${isHol?'–':total-present}</div><div class="lbl">Absent (${date})</div></div>
+    <div class="stat-card" style="--c:#ffd600"><div class="val">${isHol?'Holiday':pct+'%'}</div><div class="lbl">Attendance % (${date})</div></div>
     <div class="stat-card" style="--c:#ab47bc"><div class="val">${CLASSES.length}</div><div class="lbl">Active Divisions</div></div>
-    <div class="stat-card" style="--c:#ff7043"><div class="val">${workingDays}</div><div class="lbl">Working Days (Month)</div></div>`;
+    <div class="stat-card" style="--c:#ff7043"><div class="val">${workingDays}</div><div class="lbl">Working Days (${selMonthName} ${year})</div></div>`;
 
-  // Fetch monthly averages per class from Firebase or use demo
+  // Use cached Firebase data for monthly averages
   const labels = CLASSES.map(c=>c.name);
   let pcts;
   if(window._fbReady){
-    const fbAll = await window.fbGet('attendance') || {};
+    const fbAll = await getFbAttendance() || {};
     pcts = CLASSES.map(c => {
       let sum=0, cnt=0;
-      Object.keys(fbAll).forEach(ds => {
-        if(!isHoliday(ds) && fbAll[ds][c.name]){
+      // ★ Use historical roll for this month
+      const roll = getRollForMonth(c.name, year, month);
+      const rollTotal = roll.rg + roll.rb;
+      const daysInSelMonth = new Date(year, month+1, 0).getDate();
+      for(let d=1; d<=daysInSelMonth; d++){
+        const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        if(isHoliday(ds)) continue;
+        if(fbAll[ds] && fbAll[ds][c.name]){
           const k = fbAll[ds][c.name];
-          const roll = c.roll_g+c.roll_b;
-          if(roll>0) { sum += (k.pg+k.pb)/roll*100; cnt++; }
+          if(rollTotal>0){ sum += (k.pg+k.pb)/rollTotal*100; cnt++; }
         }
-      });
-      return cnt>0 ? parseFloat((sum/cnt).toFixed(1)) : 0; // 0 = no attendance data yet
+      }
+      return cnt>0 ? parseFloat((sum/cnt).toFixed(1)) : 0;
     });
   } else {
     // Stable demo values (seeded by class index, not random per render)
@@ -1335,6 +1532,11 @@ async function buildDashboard(){
 
   const tc2 = getChartTextColor();
   const gc2 = getChartGridColor();
+  // Update dashboard title to reflect selected month
+  const dashTitle = $('dashChartTitle');
+  const dashSub   = $('dashChartSub');
+  if(dashTitle) dashTitle.textContent = `📊 Attendance Analytics — ${MONTH_NAMES[month]} ${year}`;
+  if(dashSub)   dashSub.textContent   = `Left: Class-wise attendance % for ${MONTH_NAMES[month]} ${year}  |  Right: Day-by-day attendance trend`;
 
   if(dashBarChart) dashBarChart.destroy();
   dashBarChart = new Chart($('dashBar'),{
@@ -1361,10 +1563,14 @@ async function buildDashboard(){
 
   // ── Real trend line from Firebase ──
   // Build day-by-day attendance % for current month using real FB data
-  const fbAll2 = window._fbReady ? (await window.fbGet('attendance') || {}) : {};
+  const fbAll2 = (await getFbAttendance()) || {};
   const daysInCurMonth = new Date(year, month+1, 0).getDate();
   const trendLabels = [], trendData = [];
-  const totalRoll = CLASSES.reduce((a,c)=>a+c.roll_g+c.roll_b, 0);
+  // ★ Use historical total roll for the selected month's trend line
+  const totalRoll = CLASSES.reduce((a,c)=>{
+    const r = getRollForMonth(c.name, year, month);
+    return a + r.rg + r.rb;
+  }, 0);
 
   for(let d=1; d<=daysInCurMonth; d++){
     const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -1421,10 +1627,22 @@ function showTab(id){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   $(id).classList.add('active');
   $(`tab-${id}`).classList.add('active');
-  if(id==='monthly' ) loadMonthly();
-  if(id==='summary' ) buildDashboard();
-  if(id==='admin'   ) { renderAdminEditor(); renderHolidayList(); }
-  if(id==='daily'   ) { buildDailyTable($('selDate').value); updateAllTotals($('selDate').value); }
+  if(id==='monthly'){
+    // Show working days instantly before Firebase loads
+    showWorkingDaysSummaryInstant(getSelectedYear(), getSelectedMonth());
+    loadMonthly();
+  }
+  if(id==='summary'){
+    // Dashboard always reflects selected month
+    buildDashboard();
+  }
+  if(id==='admin'){ renderAdminEditor(); renderHolidayList(); renderRollHistoryTable(); }
+  if(id==='daily'){
+    // Sync month/year dropdowns to match selected date
+    syncDateToMonthYear($('selDate').value);
+    buildDailyTable($('selDate').value);
+    updateAllTotals($('selDate').value);
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1615,10 +1833,87 @@ function updatePreview(){
   $('totalEnrolled').innerHTML=
     `📚 <strong style="color:var(--accent)">${total}</strong> total across <strong style="color:var(--accent)">${CLASSES.length}</strong> divisions`;
 }
-function applyStructure(){
-  saveStructureToFirebase();
+async function applyStructure(){
+  const now = new Date();
+  const curYear  = now.getFullYear();
+  const curMonth = now.getMonth();
+  const key = monthKey(curYear, curMonth);
+
+  // Save the live classStructure to Firebase as usual
+  await saveStructureToFirebase();
+
+  // Snapshot roll numbers for current month with the NEW values
+  // This is the key step — it records what the roll was AFTER this change
+  await snapshotRollForMonth(curYear, curMonth);
+
   buildDailyTable($('selDate').value);
-  toast('✅ Structure saved & synced!');
+
+  // Show confirmation with details of what was snapshotted
+  const CLASSES = getClasses();
+  const total = CLASSES.reduce((a,c)=>a+c.roll_g+c.roll_b, 0);
+  toast(`✅ Structure saved! Roll snapshot recorded for ${MONTH_NAMES[curMonth]} ${curYear} (${total} students)`);
+
+  // Refresh roll history table if admin panel is visible
+  renderRollHistoryTable();
+  // If monthly tab is open, refresh it immediately with new roll numbers
+  if($('monthly').classList.contains('active')) loadMonthly();
+}
+
+// Manual snapshot button in admin panel
+async function manualSnapshot(){
+  const now = new Date();
+  await snapshotRollForMonth(now.getFullYear(), now.getMonth());
+  renderRollHistoryTable();
+  toast(`📸 Roll snapshot saved for ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}!`);
+}
+
+// Render the roll history table in the admin panel
+function renderRollHistoryTable(){
+  const el = $('rollHistoryTable');
+  if(!el) return;
+  const keys = Object.keys(rollHistory).sort().reverse(); // newest first
+
+  if(!keys.length){
+    el.innerHTML = '<p style="color:var(--text-sub,var(--text));font-size:13px;padding:8px 0;">No snapshots yet — click Apply & Save Structure to create the first one.</p>';
+    return;
+  }
+
+  const CLASSES = getClasses();
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead>
+      <tr style="border-bottom:2px solid var(--border-col,var(--border));">
+        <th style="padding:8px;text-align:left;color:var(--accent);font-family:'Rajdhani',sans-serif;letter-spacing:.5px;">MONTH</th>`;
+  CLASSES.forEach(c => {
+    html += `<th style="padding:6px 8px;color:var(--text-sub,var(--text));font-weight:600;">${c.name}<br><small style="font-weight:400;opacity:.7">G / B</small></th>`;
+  });
+  html += `<th style="padding:6px 8px;color:var(--text-sub,var(--text));font-weight:600;">TOTAL</th></tr></thead><tbody>`;
+
+  keys.forEach(key => {
+    const snap = rollHistory[key];
+    const [y, m] = key.split('-').map(Number);
+    const mName = MONTH_NAMES[m-1];
+    const isCurrentMonth = (key === monthKey(new Date().getFullYear(), new Date().getMonth()));
+    const rowBg = isCurrentMonth ? 'background:rgba(0,229,255,.06);' : '';
+    html += `<tr style="${rowBg}border-bottom:1px solid var(--td-border,rgba(255,255,255,.05));">
+      <td style="padding:8px;font-weight:700;color:var(--text-main,#fff);white-space:nowrap;">
+        ${mName} ${y} ${isCurrentMonth ? '<span style="background:rgba(0,229,255,.2);color:var(--accent);border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px;">Current</span>' : ''}
+      </td>`;
+    let rowTotal = 0;
+    CLASSES.forEach(c => {
+      const r = snap[c.name] || { rg: 0, rb: 0 };
+      const cur = { rg: c.roll_g, rb: c.roll_b };
+      const changed = !isCurrentMonth && (r.rg !== cur.rg || r.rb !== cur.rb);
+      const style = changed ? 'color:#ff9800;' : 'color:var(--text-main,#fff);';
+      html += `<td style="padding:6px 8px;text-align:center;${style}">
+        ${r.rg}G / ${r.rb}B${changed ? ' <span title="Different from current" style="cursor:help;">✎</span>' : ''}
+      </td>`;
+      rowTotal += r.rg + r.rb;
+    });
+    html += `<td style="padding:6px 8px;text-align:center;font-weight:700;color:var(--accent);">${rowTotal}</td></tr>`;
+  });
+
+  html += '</tbody></table>';
+  el.innerHTML = html;
 }
 </script>
 </body>

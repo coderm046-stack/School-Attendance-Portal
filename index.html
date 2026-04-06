@@ -35,6 +35,8 @@ try {
   window._fbReady = false;
   console.warn("Firebase offline mode:", e.message);
 }
+// Dispatch event so the main script knows Firebase is ready (replaces setTimeout guessing)
+window.dispatchEvent(new CustomEvent('fbInit', { detail: { ready: firebaseReady } }));
 
 window.fbSet = async (path, data) => {
   if(!firebaseReady) return false;
@@ -824,7 +826,7 @@ let fbListenerUnsub     = null; // current firebase listener unsubscriber
 let dashBarChart, dashLineChart;
 let fbAttendanceCache   = null; // cached Firebase attendance data
 let fbCacheTime         = 0;   // timestamp of last cache fill
-const FB_CACHE_TTL      = 30000; // 30s cache — avoids repeated Firebase reads
+const FB_CACHE_TTL      = 5000;  // 5s cache — was 30s, which caused stale monthly data
 let rollHistory         = {};  // { "YYYY-MM": { "IX-A": {rg,rb}, ... } }
 // rollHistory is the source of truth for "what were the roll numbers in month X"
 // Structure in Firebase: config/rollHistory/YYYY-MM/<className> → {rg, rb}
@@ -836,7 +838,15 @@ $('selDate').value        = todayDate.toISOString().split('T')[0];
 $('selMonth').selectedIndex = todayDate.getMonth();
 $('selYear').value        = todayDate.getFullYear();
 
-setTimeout(initApp, 900); // wait for Firebase module
+// Wait for Firebase module to signal readiness — no more guessing with setTimeout
+let _appInited = false;
+function _safeInitApp(){
+  if(_appInited) return;
+  _appInited = true;
+  initApp();
+}
+window.addEventListener('fbInit', _safeInitApp);
+setTimeout(_safeInitApp, 3000); // absolute fallback for very slow connections
 
 // ── SHARED MONTH/YEAR GETTERS — single source of truth ──
 function getSelectedMonth(){ return $('selMonth').selectedIndex; }
@@ -1058,6 +1068,28 @@ async function loadFromFirebase(){
   attachDateListener(todayStr);
   syncDateToMonthYear(todayStr);
   showWorkingDaysSummaryInstant(getSelectedYear(), getSelectedMonth());
+
+  // ── LIVE CONFIG LISTENERS ─────────────────────────────────────────────
+  // Keep class structure in sync across all devices in real time
+  window.fbListen('config/classStructure', data => {
+    if(!data) return;
+    classStructure = data;
+    renderAdminEditor();
+    buildDailyTable($('selDate').value);
+    updateAllTotals($('selDate').value);
+    if($('monthly').classList.contains('active'))  loadMonthly();
+    if($('summary').classList.contains('active'))  buildDashboard();
+    showSync('🔄 Class structure updated');
+  });
+  // Keep holidays in sync across all devices in real time
+  window.fbListen('config/holidays', data => {
+    holidays = data || {};
+    renderHolidayList();
+    updateHolidayBanner($('selDate').value);
+    showWorkingDaysSummaryInstant(getSelectedYear(), getSelectedMonth());
+    if($('monthly').classList.contains('active'))  loadMonthly();
+    showSync('🔄 Holiday list updated');
+  });
 }
 
 function attachDateListener(date){
@@ -1067,10 +1099,12 @@ function attachDateListener(date){
   fbListenerUnsub = window.fbListen(`attendance/${date}`, data => {
     if(!data) return;
     Object.keys(data).forEach(cls => { localStore[`${cls}_${date}`] = data[cls]; });
-    if($('daily').classList.contains('active')){
-      refreshInputValues(date);
-      updateAllTotals(date);
-    }
+    // Always refresh daily view inputs/totals regardless of which tab is open
+    refreshInputValues(date);
+    updateAllTotals(date);
+    // Also refresh monthly and dashboard tabs if they're currently visible
+    if($('monthly').classList.contains('active')) loadMonthly();
+    if($('summary').classList.contains('active')) buildDashboard();
     showSync('🔄 Live update received');
   });
 }

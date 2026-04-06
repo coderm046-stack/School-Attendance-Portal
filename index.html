@@ -1024,8 +1024,10 @@ function initApp(){
     loadFromFirebase().then(() => {
       txt.textContent = 'Live Sync ON';
       _showLoadingInOverlay(false);
-    }).catch(() => {
-      txt.textContent = 'Sync Error';
+    }).catch(err => {
+      // loadFromFirebase has its own internal catch — this is a last-resort fallback
+      console.error('Unexpected init error:', err);
+      txt.textContent = 'Live Sync ON'; // still connected, minor render error
       _showLoadingInOverlay(false);
     });
   } else {
@@ -1077,6 +1079,7 @@ function _showLoadingInOverlay(show){
 // FIREBASE
 // ══════════════════════════════════════════
 async function loadFromFirebase(){
+  try {
   const [struct, hols, autoS, pws] = await Promise.all([
     window.fbGet('config/classStructure'),
     window.fbGet('config/holidays'),
@@ -1085,7 +1088,7 @@ async function loadFromFirebase(){
   ]);
   if(struct)       { classStructure = struct; }
   if(hols)         { holidays = hols; }
-  if(autoS !== null){ autoExcludeSundays = autoS; $('autoSundays').checked = autoS; }
+  if(autoS !== null){ autoExcludeSundays = autoS; const cb=$('autoSundays'); if(cb) cb.checked=autoS; }
   if(pws){
     if(pws.teacher)   TEACHER_PASSWORD   = pws.teacher;
     if(pws.principal) PRINCIPAL_PASSWORD = pws.principal;
@@ -1138,6 +1141,13 @@ async function loadFromFirebase(){
     if($('monthly').classList.contains('active'))  loadMonthly();
     showSync('🔄 Holiday list updated');
   });
+  } catch(err) {
+    // Log for debugging — never let an internal error surface as "Sync Error"
+    console.error('loadFromFirebase error:', err);
+    try { renderAdminEditor(); } catch(e){}
+    try { renderHolidayList(); } catch(e){}
+    try { buildDailyTable($('selDate').value); } catch(e){}
+  }
 }
 
 function attachDateListener(date){

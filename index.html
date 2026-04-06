@@ -356,6 +356,94 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
 .print-header{display:none;text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #1565c0;}
 .print-header h2{font-size:18px;font-weight:700;color:#0a1628;}
 .print-header p{font-size:13px;color:#546e7a;}
+
+/* ── ROLE LOGIN OVERLAY ── */
+#roleLoginOverlay{position:fixed;inset:0;z-index:3000;
+  background:linear-gradient(135deg,#050d1e 0%,#0a1a35 50%,#071225 100%);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  transition:.4s;overflow:auto;padding:20px;}
+#roleLoginOverlay.hidden{opacity:0;pointer-events:none;}
+.login-school-header{text-align:center;margin-bottom:32px;}
+.login-school-header .logo{width:80px;height:80px;border-radius:50%;
+  background:linear-gradient(135deg,#1565c0,#006064);
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;
+  color:#fff;text-align:center;line-height:1.4;margin:0 auto 14px;
+  border:2.5px solid var(--gold);box-shadow:0 0 28px rgba(255,214,0,.4);}
+.login-school-header h1{font-family:'Rajdhani',sans-serif;font-size:clamp(14px,2.5vw,22px);
+  font-weight:700;color:#fff;letter-spacing:1px;text-shadow:0 0 20px rgba(0,229,255,.4);}
+.login-school-header p{font-size:12px;color:rgba(255,255,255,.55);margin-top:4px;}
+.login-school-header .portal-tag{display:inline-block;background:rgba(0,229,255,.12);
+  border:1px solid rgba(0,229,255,.35);border-radius:20px;padding:4px 16px;
+  font-size:12px;color:var(--accent);margin-top:8px;font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:1px;}
+
+/* Role picker cards */
+.role-picker{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin-bottom:28px;}
+.role-card{background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.12);
+  border-radius:18px;padding:26px 30px;min-width:180px;cursor:pointer;text-align:center;
+  transition:.25s;position:relative;overflow:hidden;}
+.role-card::before{content:'';position:absolute;inset:0;opacity:0;transition:.25s;
+  background:var(--rc,rgba(21,101,192,.15));}
+.role-card:hover{border-color:var(--rbc,rgba(0,229,255,.5));transform:translateY(-4px);
+  box-shadow:0 12px 40px rgba(0,0,0,.4);}
+.role-card:hover::before{opacity:1;}
+.role-card .rc-icon{font-size:40px;margin-bottom:10px;display:block;}
+.role-card .rc-title{font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700;color:#fff;margin-bottom:4px;}
+.role-card .rc-desc{font-size:11px;color:rgba(207,228,255,.55);}
+.role-card.admin-card{--rc:rgba(255,214,0,.1);--rbc:rgba(255,214,0,.5);}
+.role-card.teacher-card{--rc:rgba(0,200,83,.1);--rbc:rgba(0,200,83,.5);}
+.role-card.principal-card{--rc:rgba(41,182,246,.1);--rbc:rgba(41,182,246,.5);}
+
+/* Role password box */
+.role-pw-box{background:linear-gradient(145deg,#0d1f3c,#0a2744);
+  border:1.5px solid rgba(0,229,255,.35);border-radius:20px;padding:36px 32px;
+  width:380px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.6);position:relative;}
+.role-pw-box .back-btn{position:absolute;top:14px;left:14px;background:transparent;border:none;
+  color:rgba(207,228,255,.5);cursor:pointer;font-size:13px;font-family:'Rajdhani',sans-serif;
+  font-weight:600;padding:4px 8px;border-radius:6px;transition:.2s;}
+.role-pw-box .back-btn:hover{color:#fff;background:rgba(255,255,255,.07);}
+.role-pw-box .role-icon{width:60px;height:60px;border-radius:50%;
+  background:var(--ri-bg,linear-gradient(135deg,#1565c0,#006064));
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+  margin:0 auto 14px;box-shadow:0 0 0 6px rgba(0,229,255,.1);}
+.role-pw-box h2{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;
+  color:#fff;text-align:center;margin-bottom:4px;}
+.role-pw-box .sub{font-size:12px;color:var(--text);text-align:center;margin-bottom:22px;}
+
+/* Session bar */
+.session-bar{display:none;align-items:center;gap:8px;border-radius:8px;
+  padding:5px 12px;font-size:12px;font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:.5px;}
+.session-bar.show{display:flex;}
+.session-bar.admin-bar{background:rgba(255,214,0,.12);border:1px solid rgba(255,214,0,.3);color:var(--gold);}
+.session-bar.teacher-bar{background:rgba(0,200,83,.1);border:1px solid rgba(0,200,83,.3);color:#69f0ae;}
+.session-bar.principal-bar{background:rgba(41,182,246,.1);border:1px solid rgba(41,182,246,.3);color:var(--sky);}
+.session-bar button{background:transparent;border:none;color:inherit;opacity:.6;cursor:pointer;font-size:12px;padding:0 4px;}
+.session-bar button:hover{opacity:1;}
+
+/* Teacher class selector banner */
+.teacher-class-banner{background:rgba(0,200,83,.07);border:1px solid rgba(0,200,83,.25);
+  border-radius:10px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;
+  flex-wrap:wrap;}
+.teacher-class-banner label{font-size:12px;color:rgba(0,200,83,.8);font-weight:600;letter-spacing:.5px;}
+.teacher-class-banner select{background:rgba(0,200,83,.1);border:1px solid rgba(0,200,83,.3);
+  border-radius:7px;padding:5px 10px;color:#69f0ae;font-size:13px;outline:none;cursor:pointer;}
+.teacher-class-banner select option{background:#0a1628;color:#fff;}
+
+/* Principal read-only notice */
+.principal-notice{background:rgba(41,182,246,.07);border:1px solid rgba(41,182,246,.25);
+  border-radius:10px;padding:10px 16px;margin-bottom:14px;font-size:13px;color:var(--sky);
+  display:none;align-items:center;gap:8px;}
+.principal-notice.show{display:flex;}
+
+/* Password info card (in admin panel) */
+.pw-info-card{background:rgba(255,214,0,.06);border:1px solid rgba(255,214,0,.2);
+  border-radius:12px;padding:16px;margin-bottom:16px;}
+.pw-info-card .pw-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.pw-info-card .pw-row:last-child{margin-bottom:0;}
+.pw-info-card label{font-size:11px;color:var(--text);min-width:110px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;}
+.pw-info-card input{flex:1;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:7px;
+  padding:7px 11px;color:#fff;font-size:13px;outline:none;}
+.pw-info-card input:focus{border-color:var(--gold);}
+
 </style>
 </head>
 <body>
@@ -372,10 +460,7 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
       <span class="fb-dot" id="fbDot"></span>
       <span id="fbStatusText">Connecting…</span>
     </div>
-    <div class="admin-session-bar" id="adminSessionBar">
-      🔐 Admin Active
-      <button onclick="adminLogout()">✕ Logout</button>
-    </div>
+
     <!-- Theme Toggle -->
     <button id="themeToggleBtn" onclick="toggleTheme()"
       title="Toggle Light/Dark Theme"
@@ -384,11 +469,9 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
         transition:.2s;display:flex;align-items:center;gap:5px;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;">
       🌙 Dark
     </button>
-    <select class="role-select" id="roleSelect" onchange="switchRole(this.value)">
-      <option value="teacher">👩‍🏫 Teacher</option>
-      <option value="principal">🏫 Principal</option>
-      <option value="admin">⚙️ Admin</option>
-    </select>
+    <div class="session-bar admin-bar"    id="adminBar">⚙️ ADMIN <button onclick="doLogout()">✕ Logout</button></div>
+    <div class="session-bar teacher-bar"  id="teacherBar">👩‍🏫 TEACHER <span id="teacherBarClass"></span><button onclick="doLogout()">✕ Logout</button></div>
+    <div class="session-bar principal-bar" id="principalBar">🏫 PRINCIPAL <button onclick="doLogout()">✕ Logout</button></div>
   </div>
 </header>
 
@@ -413,8 +496,14 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
       <p id="printDateLabel">Today's Attendance</p>
     </div>
 
+    <div class="teacher-class-banner" id="teacherClassBanner" style="display:none">
+      <label>🏫 YOUR CLASS:</label>
+      <select id="teacherClassSel" onchange="onTeacherClassChange()"></select>
+      <span style="font-size:12px;color:rgba(0,200,83,.6);">You can only fill attendance for your assigned class</span>
+    </div>
+
     <div class="sec-title">📋 Today's <span>Attendance</span></div>
-    <p class="sec-sub">Enter Girls & Boys present for each class — absent is calculated automatically. Holidays are blocked.</p>
+    <p class="sec-sub" id="dailySubText">Enter Girls & Boys present for each class — absent is calculated automatically. Holidays are blocked.</p>
 
     <div id="holidayBanner" class="holiday-banner" style="display:none">
       🎉 <strong id="holidayBannerText"></strong> — Attendance not required today.
@@ -462,6 +551,12 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
       <p id="printMonthLabel">Monthly Attendance Report</p>
     </div>
 
+    <div class="teacher-class-banner" id="teacherClassBannerMonthly" style="display:none">
+      <label>🏫 YOUR CLASS:</label>
+      <span id="teacherClassLabelMonthly" style="color:#69f0ae;font-weight:700;font-size:15px;font-family:'Rajdhani',sans-serif;"></span>
+      <span style="font-size:12px;color:rgba(0,200,83,.6);">Monthly report for your class only</span>
+    </div>
+    <div class="principal-notice" id="principalNoticeMonthly" style="display:none">👁️ View Only — Showing all classes. Principal view is read-only.</div>
     <div class="sec-title">📅 Monthly <span>View</span></div>
     <p class="sec-sub">Cumulative class-wise attendance. Percentage is calculated on <strong>working days only</strong> — holidays &amp; Sundays excluded.</p>
 
@@ -505,16 +600,6 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
       </table>
     </div>
 
-    <div class="chart-container">
-      <div class="chart-title">📊 Attendance Charts — Holiday Adjusted</div>
-      <div style="font-size:12px;color:var(--text-sub,var(--text));margin-bottom:14px;">
-        Left: Class-wise attendance % (green=good, orange=monitor, red=critical) &nbsp;|&nbsp; Right: Present % vs Absent % comparison
-      </div>
-      <div class="chart-grid">
-        <div><canvas id="barChart"></canvas></div>
-        <div><canvas id="pieChart"></canvas></div>
-      </div>
-    </div>
   </div>
 
   <!-- ═══ TAB 3: DASHBOARD ═══ -->
@@ -542,6 +627,28 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
   <div id="admin" class="section">
     <div class="sec-title">⚙️ Manage <span>Classes &amp; Holidays</span></div>
     <p class="sec-sub">Add/remove divisions, update roll strength, mark holidays. Changes sync to Firebase instantly.</p>
+
+    <!-- Password Manager -->
+    <div class="pw-info-card" id="pwManagerPanel">
+      <div class="panel-title" style="color:var(--gold);margin-bottom:12px;">🔑 Role Passwords (Admin Visibility Only)</div>
+      <div class="pw-row">
+        <label>Admin Password</label>
+        <input type="text" id="pwAdmin" value="school@admin123" readonly style="color:var(--gold);">
+        <span style="font-size:11px;color:var(--text);margin-left:6px;">Fixed</span>
+      </div>
+      <div class="pw-row">
+        <label>Teacher Password</label>
+        <input type="text" id="pwTeacher" value="" placeholder="teacher@ghss">
+        <button class="btn btn-success btn-sm" onclick="saveRolePasswords()" style="margin-left:6px;">💾 Save</button>
+      </div>
+      <div class="pw-row">
+        <label>Principal Password</label>
+        <input type="text" id="pwPrincipal" value="" placeholder="principal@ghss">
+      </div>
+      <div style="font-size:11px;color:var(--text);margin-top:8px;">
+        💡 Teacher &amp; Principal passwords are stored in Firebase. Admin can update them here.
+      </div>
+    </div>
 
     <!-- Holiday Manager -->
     <div class="holiday-manager">
@@ -612,6 +719,55 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
   </div>
 </main>
 
+
+<!-- ═══ ROLE LOGIN OVERLAY ═══ -->
+<div id="roleLoginOverlay">
+  <div class="login-school-header">
+    <div class="logo">GHSS<br>KHANVEL<br>(MM)</div>
+    <h1>GOVT. HIGHER SECONDARY SCHOOL, KHANVEL</h1>
+    <p>Marathi Medium &nbsp;|&nbsp; UT of DNH &amp; DD</p>
+    <div class="portal-tag">📋 ATTENDANCE MANAGEMENT PORTAL</div>
+  </div>
+  <!-- Step 1: pick role -->
+  <div id="rolePickerStep">
+    <div style="text-align:center;margin-bottom:20px;font-family:'Rajdhani',sans-serif;font-size:15px;color:rgba(207,228,255,.6);letter-spacing:1px;">SELECT YOUR ROLE TO CONTINUE</div>
+    <div class="role-picker">
+      <div class="role-card admin-card" onclick="pickRole('admin')">
+        <span class="rc-icon">⚙️</span>
+        <div class="rc-title">Admin</div>
+        <div class="rc-desc">Manage classes, holidays &amp; settings</div>
+      </div>
+      <div class="role-card teacher-card" onclick="pickRole('teacher')">
+        <span class="rc-icon">👩‍🏫</span>
+        <div class="rc-title">Teacher</div>
+        <div class="rc-desc">Fill &amp; view attendance for your class</div>
+      </div>
+      <div class="role-card principal-card" onclick="pickRole('principal')">
+        <span class="rc-icon">🏫</span>
+        <div class="rc-title">Principal</div>
+        <div class="rc-desc">View attendance of all classes</div>
+      </div>
+    </div>
+  </div>
+  <!-- Step 2: password -->
+  <div id="rolePasswordStep" style="display:none">
+    <div class="role-pw-box">
+      <button class="back-btn" onclick="backToRolePicker()">← Back</button>
+      <div class="role-icon" id="rolePwIcon"></div>
+      <h2 id="rolePwTitle"></h2>
+      <p class="sub" id="rolePwSub"></p>
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="rolePwInput" placeholder="Enter password"
+          onkeydown="if(event.key==='Enter')attemptRoleLogin()" autocomplete="current-password">
+      </div>
+      <button class="btn-login" onclick="attemptRoleLogin()">🔓 Login</button>
+      <div class="login-error" id="rolePwError">❌ Incorrect password. Please try again.</div>
+      <div class="login-attempts-msg" id="rolePwAttempts"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ ADMIN LOGIN MODAL ═══ -->
 <div id="adminLoginOverlay">
   <div class="login-box">
@@ -642,26 +798,30 @@ td.editable input:focus{border-color:var(--accent);background:rgba(0,229,255,.15
 // ══════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════
-const ADMIN_PASSWORD = 'school@admin123';
+const ADMIN_PASSWORD  = 'school@admin123';
+let TEACHER_PASSWORD  = 'teacher@ghss';    // loaded from Firebase by admin
+let PRINCIPAL_PASSWORD= 'principal@ghss';  // loaded from Firebase by admin
+
+let currentRole      = null;  // 'admin' | 'teacher' | 'principal'
+let selectedRoleTemp = null;  // role being attempted
+let roleAttempts     = 0;
+let roleLockUntil    = 0;
 const STANDARDS      = ['IX','X','XI','XII'];
 const MONTH_NAMES    = ['January','February','March','April','May','June',
                         'July','August','September','October','November','December'];
 
-let adminLoggedIn  = false;
+let adminLoggedIn  = false;  // legacy – use currentRole instead
 let loginAttempts  = 0;
 let lockoutUntil   = 0;
 let classStructure = {
-  IX:  [{div:'A',rg:22,rb:26},{div:'B',rg:20,rb:27}],
-  X:   [{div:'A',rg:24,rb:26},{div:'B',rg:23,rb:25}],
-  XI:  [{div:'A',rg:22,rb:18},{div:'B',rg:20,rb:22},{div:'C',rg:24,rb:21},{div:'D',rg:21,rb:20}],
-  XII: [{div:'A',rg:22,rb:22},{div:'B',rg:20,rb:23}],
-};
+  IX:  [], X:  [], XI: [], XII: []
+};  // loaded fresh from Firebase — no demo data
 let holidays            = {};   // { "YYYY-MM-DD": "Name" }
 let autoExcludeSundays  = true;
 let localStore          = {};   // { "CLASS_DATE": {pg,pb} }
 let monthlyReportData   = [];   // populated by loadMonthly() for CSV export
 let fbListenerUnsub     = null; // current firebase listener unsubscriber
-let barChart, pieChart, dashBarChart, dashLineChart;
+let dashBarChart, dashLineChart;
 let fbAttendanceCache   = null; // cached Firebase attendance data
 let fbCacheTime         = 0;   // timestamp of last cache fill
 const FB_CACHE_TTL      = 30000; // 30s cache — avoids repeated Firebase reads
@@ -843,31 +1003,37 @@ function initApp(){
   if(fbReady){
     dot.classList.add('online');
     txt.textContent = 'Live Sync ON';
-    loadFromFirebase();
+    loadFromFirebase();          // loads structure, holidays, passwords
   } else {
     dot.classList.add('offline');
     txt.textContent = 'Offline Mode';
     $('fbNotice').classList.add('show');
-    // Still build the daily table in offline mode
-    buildDailyTable($('selDate').value);
-    updateAllTotals($('selDate').value);
     renderAdminEditor();
     renderHolidayList();
+    buildDailyTable($('selDate').value);
+    updateAllTotals($('selDate').value);
   }
+  // Show the role login screen (always)
+  $('roleLoginOverlay').style.display = 'flex';
 }
 
 // ══════════════════════════════════════════
 // FIREBASE
 // ══════════════════════════════════════════
 async function loadFromFirebase(){
-  const [struct, hols, autoS] = await Promise.all([
+  const [struct, hols, autoS, pws] = await Promise.all([
     window.fbGet('config/classStructure'),
     window.fbGet('config/holidays'),
     window.fbGet('config/autoExcludeSundays'),
+    window.fbGet('config/rolePasswords'),
   ]);
   if(struct)       { classStructure = struct; }
   if(hols)         { holidays = hols; }
   if(autoS !== null){ autoExcludeSundays = autoS; $('autoSundays').checked = autoS; }
+  if(pws){
+    if(pws.teacher)   TEACHER_PASSWORD   = pws.teacher;
+    if(pws.principal) PRINCIPAL_PASSWORD = pws.principal;
+  }
 
   // Load full roll history (all months)
   await loadRollHistory();
@@ -876,18 +1042,21 @@ async function loadFromFirebase(){
   // This handles schools that update mid-month — we capture the state at first load.
   const now = new Date();
   const curKey = monthKey(now.getFullYear(), now.getMonth());
-  if(!rollHistory[curKey]){
+  // ★ Only snapshot if classes are actually configured — never snapshot an empty structure
+  const hasClasses = STANDARDS.some(s => (classStructure[s]||[]).length > 0);
+  if(!rollHistory[curKey] && hasClasses){
     await snapshotRollForMonth(now.getFullYear(), now.getMonth());
   }
 
   renderAdminEditor();
   renderHolidayList();
-  buildDailyTable($('selDate').value);
-  updateAllTotals($('selDate').value);
-  attachDateListener($('selDate').value);
-  // Pre-sync month/year dropdowns to match today's date
-  syncDateToMonthYear($('selDate').value);
-  // Pre-load working days so Monthly tab is ready instantly
+  // Pre-load today's attendance data from Firebase before building table
+  const todayStr = $('selDate').value;
+  await fetchAndCacheDayData(todayStr);
+  buildDailyTable(todayStr);
+  updateAllTotals(todayStr);
+  attachDateListener(todayStr);
+  syncDateToMonthYear(todayStr);
   showWorkingDaysSummaryInstant(getSelectedYear(), getSelectedMonth());
 }
 
@@ -994,14 +1163,28 @@ function renderHolidayList(){
 // ══════════════════════════════════════════
 // DAILY ATTENDANCE
 // ══════════════════════════════════════════
-function onDateChange(){
+async function onDateChange(){
   const date = $('selDate').value;
   $('printDateLabel').textContent = `Date: ${date}`;
-  // Sync the month/year dropdowns to match chosen date
   syncDateToMonthYear(date);
+  // ★ Always fetch this date's actual data from Firebase before rendering
+  await fetchAndCacheDayData(date);
   buildDailyTable(date);
   updateAllTotals(date);
   attachDateListener(date);
+}
+
+// Fetch a single day's attendance from Firebase and populate localStore
+async function fetchAndCacheDayData(date){
+  if(!window._fbReady) return;
+  try {
+    const dayData = await window.fbGet(`attendance/${date}`);
+    if(dayData){
+      Object.keys(dayData).forEach(cls => {
+        localStore[`${cls}_${date}`] = dayData[cls];
+      });
+    }
+  } catch(e){ console.warn('fetchAndCacheDayData error:', e); }
 }
 
 // Called instantly when selMonth or selYear changes
@@ -1055,47 +1238,83 @@ function updateHolidayBanner(date){
 
 function buildDailyTable(date){
   updateHolidayBanner(date);
-  const CLASSES = getClasses();
+  let CLASSES = getClasses();
+
+  // If no classes exist yet (Firebase hasn't configured them), show a message
+  if(!CLASSES.length){
+    const body = $('dailyBody');
+    if(body) body.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:30px;color:var(--text);font-size:13px;">
+      ${currentRole==='admin'
+        ? '⚙️ No classes configured yet. Go to <strong>Manage Classes</strong> tab to add class structure.'
+        : '⏳ Class structure not configured yet. Please contact the Admin.'}
+    </td></tr>`;
+    return;
+  }
+
+  const isTeacher   = currentRole === 'teacher';
+  const isPrincipal = currentRole === 'principal';
+  const teacherCls  = isTeacher ? getTeacherClass() : null;
+
+  // Teacher sees only their class
+  if(isTeacher && teacherCls){
+    CLASSES = CLASSES.filter(c => c.name === teacherCls);
+  }
+
+  // Principal & admin: all classes; inputs disabled for principal
+  const readOnly = isPrincipal;
   const body = $('dailyBody');
   body.innerHTML = '';
   let sr = 1;
 
-  STANDARDS.forEach(std => {
+  // Save button visibility
+  const btnSave = $('btnSave');
+  if(btnSave) btnSave.style.display = (isTeacher || currentRole==='admin') ? 'inline-flex' : 'none';
+
+  const activeStds = [...new Set(CLASSES.map(c=>c.std))];
+  activeStds.forEach(std => {
     const cls = CLASSES.filter(c => c.std===std);
     if(!cls.length) return;
 
     cls.forEach(c => {
       const saved = localStore[`${c.name}_${date}`] || {pg:0, pb:0};
+      const inputAttrs = readOnly
+        ? `type="number" min="0" value="${saved.pg}" readonly style="pointer-events:none;opacity:.6;"`
+        : `type="number" min="0" max="${c.roll_g}" value="${saved.pg}" onchange="onCellChange('${c.name}','${date}')"`;
+      const inputAttrsB = readOnly
+        ? `type="number" min="0" value="${saved.pb}" readonly style="pointer-events:none;opacity:.6;"`
+        : `type="number" min="0" max="${c.roll_b}" value="${saved.pb}" onchange="onCellChange('${c.name}','${date}')"`;
       const row = body.insertRow();
       row.innerHTML = `
         <td class="sr">${sr++}</td>
         <td class="cls">${c.name}</td>
         <td>${c.roll_g}</td><td>${c.roll_b}</td><td class="calc">${c.roll_g+c.roll_b}</td>
-        <td class="editable"><input type="number" min="0" max="${c.roll_g}" value="${saved.pg}"
-          id="pg_${c.name}" onchange="onCellChange('${c.name}','${date}')"></td>
-        <td class="editable"><input type="number" min="0" max="${c.roll_b}" value="${saved.pb}"
-          id="pb_${c.name}" onchange="onCellChange('${c.name}','${date}')"></td>
+        <td class="editable"><input id="pg_${c.name}" ${inputAttrs}></td>
+        <td class="editable"><input id="pb_${c.name}" ${inputAttrsB}></td>
         <td class="calc"         id="pt_${c.name}">${saved.pg+saved.pb}</td>
         <td class="badge-absent" id="ag_${c.name}">${c.roll_g-saved.pg}</td>
         <td class="badge-absent" id="ab_${c.name}">${c.roll_b-saved.pb}</td>
         <td class="badge-absent" id="at_${c.name}">${(c.roll_g+c.roll_b)-(saved.pg+saved.pb)}</td>`;
     });
 
-    // Subtotal row
-    const rg = cls.reduce((a,c)=>a+c.roll_g,0), rb = cls.reduce((a,c)=>a+c.roll_b,0);
-    const sub = body.insertRow(); sub.className='subtotal'; sub.id=`sub_${std}`;
-    sub.innerHTML = `<td></td><td class="cls">STD ${std} TOTAL</td>
-      <td>${rg}</td><td>${rb}</td><td>${rg+rb}</td>
-      <td id="spg_${std}">–</td><td id="spb_${std}">–</td><td id="spt_${std}">–</td>
-      <td id="sag_${std}">–</td><td id="sab_${std}">–</td><td id="sat_${std}">–</td>`;
+    // Subtotal row (skip if teacher view, only one class shown)
+    if(!isTeacher){
+      const rg = cls.reduce((a,c)=>a+c.roll_g,0), rb = cls.reduce((a,c)=>a+c.roll_b,0);
+      const sub = body.insertRow(); sub.className='subtotal'; sub.id=`sub_${std}`;
+      sub.innerHTML = `<td></td><td class="cls">STD ${std} TOTAL</td>
+        <td>${rg}</td><td>${rb}</td><td>${rg+rb}</td>
+        <td id="spg_${std}">–</td><td id="spb_${std}">–</td><td id="spt_${std}">–</td>
+        <td id="sag_${std}">–</td><td id="sab_${std}">–</td><td id="sat_${std}">–</td>`;
+    }
   });
 
-  // Grand total row
-  const gt = body.insertRow(); gt.className='grand-total';
-  gt.innerHTML = `<td></td><td class="cls">🏫 GRAND TOTAL</td>
-    <td id="gt_rg">–</td><td id="gt_rb">–</td><td id="gt_rt">–</td>
-    <td id="gt_pg">–</td><td id="gt_pb">–</td><td id="gt_pt">–</td>
-    <td id="gt_ag">–</td><td id="gt_ab">–</td><td id="gt_at">–</td>`;
+  // Grand total row (admin and principal only)
+  if(!isTeacher){
+    const gt = body.insertRow(); gt.className='grand-total';
+    gt.innerHTML = `<td></td><td class="cls">🏫 GRAND TOTAL</td>
+      <td id="gt_rg">–</td><td id="gt_rb">–</td><td id="gt_rt">–</td>
+      <td id="gt_pg">–</td><td id="gt_pb">–</td><td id="gt_pt">–</td>
+      <td id="gt_ag">–</td><td id="gt_ab">–</td><td id="gt_at">–</td>`;
+  }
 
   updateAllTotals(date);
 }
@@ -1131,9 +1350,13 @@ function onCellChange(cls, date){
 }
 
 function updateAllTotals(date){
-  const CLASSES = getClasses();
+  let CLASSES = getClasses();
+  // ★ Stat cards reflect only the teacher's class in teacher view
+  const isTeacher = currentRole === 'teacher';
+  const tc = isTeacher ? getTeacherClass() : null;
+  const statClasses = (isTeacher && tc) ? CLASSES.filter(c=>c.name===tc) : CLASSES;
 
-  // Subtotals per standard
+  // Subtotals per standard (for admin/principal; DOM elements may not exist in teacher view)
   STANDARDS.forEach(std => {
     const cls = CLASSES.filter(c=>c.std===std);
     if(!cls.length) return;
@@ -1146,7 +1369,7 @@ function updateAllTotals(date){
     setTxt(`sag_${std}`,rg-pg); setTxt(`sab_${std}`,rb-pb); setTxt(`sat_${std}`,(rg+rb)-(pg+pb));
   });
 
-  // Grand totals
+  // Grand totals (only when DOM elements exist — admin/principal view)
   let rg=0,rb=0,pg=0,pb=0;
   CLASSES.forEach(c=>{
     rg+=c.roll_g; rb+=c.roll_b;
@@ -1157,9 +1380,15 @@ function updateAllTotals(date){
   setTxt('gt_pg',pg); setTxt('gt_pb',pb); setTxt('gt_pt',pg+pb);
   setTxt('gt_ag',rg-pg); setTxt('gt_ab',rb-pb); setTxt('gt_at',(rg+rb)-(pg+pb));
 
-  // Stat cards
-  const total = rg+rb;
-  const present = pg+pb;
+  // ★ Stat cards — use only the visible class(es) for accurate numbers
+  let sRg=0,sRb=0,sPg=0,sPb=0;
+  statClasses.forEach(c=>{
+    sRg+=c.roll_g; sRb+=c.roll_b;
+    const k = localStore[`${c.name}_${date}`]||{pg:0,pb:0};
+    sPg+=k.pg; sPb+=k.pb;
+  });
+  const total   = sRg+sRb;
+  const present = sPg+sPb;
   const absent  = total-present;
   const isHol   = isHoliday(date);
   const pct     = (!isHol && total>0) ? (present/total*100).toFixed(1) : null;
@@ -1177,19 +1406,28 @@ function updateAllTotals(date){
 async function saveAttendance(){
   const date = $('selDate').value;
   if(isHoliday(date)){ toast('⚠️ Cannot save attendance on a holiday','warn'); return; }
-  $('saveStatus').textContent = '✅ Saved at '+new Date().toLocaleTimeString();
   if(window._fbReady){
-    const CLASSES = getClasses();
+    let CLASSES = getClasses();
+    // ★ Teacher saves ONLY their own class — never overwrite other classes with zeros
+    if(currentRole === 'teacher'){
+      const tc = getTeacherClass();
+      if(!tc){ toast('⚠️ No class selected','warn'); return; }
+      CLASSES = CLASSES.filter(c => c.name === tc);
+    }
+    // Build payload for only the relevant classes
     const payload = {};
     CLASSES.forEach(c => { payload[c.name] = localStore[`${c.name}_${date}`]||{pg:0,pb:0}; });
-    const ok = await window.fbSet(`attendance/${date}`, payload);
-    if(ok){
-      invalidateFbCache(); // Force fresh data on next tab view
-      showSync('☁️ Synced to cloud');
-    } else {
-      showSync('⚠️ Cloud sync failed');
+    // ★ Use update-style write (merge per class path) so other teachers' data is preserved
+    let allOk = true;
+    for(const [cls, val] of Object.entries(payload)){
+      const ok = await window.fbSet(`attendance/${date}/${cls}`, val);
+      if(!ok) allOk = false;
     }
+    invalidateFbCache();
+    showSync(allOk ? '☁️ Synced to cloud' : '⚠️ Cloud sync failed');
+    if(!allOk){ toast('⚠️ Some data failed to sync','warn'); return; }
   }
+  $('saveStatus').textContent = '✅ Saved at '+new Date().toLocaleTimeString();
   toast('✅ Attendance saved!');
 }
 
@@ -1201,14 +1439,20 @@ async function loadMonthly(){
   if(ph) ph.style.display='none';
   const month = getSelectedMonth();
   const year  = getSelectedYear();
-  const CLASSES = getClasses();
+  let CLASSES = getClasses();
+  // Teacher sees only their class in monthly view
+  if(currentRole === 'teacher'){
+    const tc = getTeacherClass();
+    if(tc) CLASSES = CLASSES.filter(c => c.name === tc);
+  }
   const { workingDays, holidayDates } = getMonthWorkingDays(year, month);
 
   // Show working days summary immediately (already shown by onMonthYearChange,
   // but also update here in case loadMonthly was called directly)
   showWorkingDaysSummaryInstant(year, month);
 
-  // Fetch Firebase data using cache (fast if recently loaded)
+  // Always fetch fresh data from Firebase for accurate monthly totals
+  invalidateFbCache();
   let fbData = await getFbAttendance();
 
   const body = $('monthlyBody');
@@ -1254,12 +1498,10 @@ async function loadMonthly(){
       for(let d=1; d<=daysInMonth; d++){
         const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         if(isHoliday(ds)) continue;
+        // ★ Only use Firebase data — localStore can be stale/incomplete for past dates
         if(fbData && fbData[ds] && fbData[ds][c.name]){
           totalPG += fbData[ds][c.name].pg||0;
           totalPB += fbData[ds][c.name].pb||0;
-        } else if(localStore[`${c.name}_${ds}`]){
-          totalPG += localStore[`${c.name}_${ds}`].pg||0;
-          totalPB += localStore[`${c.name}_${ds}`].pb||0;
         }
       }
 
@@ -1295,13 +1537,15 @@ async function loadMonthly(){
     });
 
     const spct = (smaxG+smaxB)>0 ? ((srg+srb)/(smaxG+smaxB)*100).toFixed(1) : '0.0';
-    const sub = body.insertRow(); sub.className='subtotal';
-    sub.innerHTML = `<td></td><td class="cls">STD ${std} TOTAL</td>
-      <td>${sg}</td><td>${sb}</td><td>${sg+sb}</td>
-      <td>${srg}</td><td>${srb}</td><td>${srg+srb}</td>
-      <td>${smaxG-srg}</td><td>${smaxB-srb}</td><td>${(smaxG+smaxB)-(srg+srb)}</td>
-      <td>${workingDays}</td>
-      <td class="pct" style="color:var(--sky)">${spct}%</td>`;
+    if(currentRole !== 'teacher'){
+      const sub = body.insertRow(); sub.className='subtotal';
+      sub.innerHTML = `<td></td><td class="cls">STD ${std} TOTAL</td>
+        <td>${sg}</td><td>${sb}</td><td>${sg+sb}</td>
+        <td>${srg}</td><td>${srb}</td><td>${srg+srb}</td>
+        <td>${smaxG-srg}</td><td>${smaxB-srb}</td><td>${(smaxG+smaxB)-(srg+srb)}</td>
+        <td>${workingDays}</td>
+        <td class="pct" style="color:var(--sky)">${spct}%</td>`;
+    }
   });
 
   // ── Grand Total — also uses historical rolls ──
@@ -1317,9 +1561,6 @@ async function loadMonthly(){
       if(fbData && fbData[ds] && fbData[ds][c.name]){
         totalPG += fbData[ds][c.name].pg||0;
         totalPB += fbData[ds][c.name].pb||0;
-      } else if(localStore[`${c.name}_${ds}`]){
-        totalPG += localStore[`${c.name}_${ds}`].pg||0;
-        totalPB += localStore[`${c.name}_${ds}`].pb||0;
       }
     }
     gRg+=roll.rg; gRb+=roll.rb;
@@ -1327,16 +1568,18 @@ async function loadMonthly(){
     gMaxG+=roll.rg*workingDays; gMaxB+=roll.rb*workingDays;
   });
   const gPct = (gMaxG+gMaxB)>0 ? ((gPg+gPb)/(gMaxG+gMaxB)*100).toFixed(1) : '0.0';
-  const gtRow = body.insertRow(); gtRow.className='grand-total';
-  gtRow.innerHTML = `<td></td><td class="cls">🏫 SCHOOL TOTAL</td>
-    <td>${gRg}</td><td>${gRb}</td><td>${gRg+gRb}</td>
-    <td>${gPg}</td><td>${gPb}</td><td>${gPg+gPb}</td>
-    <td>${gMaxG-gPg}</td><td>${gMaxB-gPb}</td><td>${(gMaxG+gMaxB)-(gPg+gPb)}</td>
-    <td>${workingDays}</td>
-    <td class="pct" style="color:var(--accent)">${gPct}%</td>`;
+  // Only show grand total for admin & principal (teacher sees only their class)
+  if(currentRole !== 'teacher'){
+    const gtRow = body.insertRow(); gtRow.className='grand-total';
+    gtRow.innerHTML = `<td></td><td class="cls">🏫 SCHOOL TOTAL</td>
+      <td>${gRg}</td><td>${gRb}</td><td>${gRg+gRb}</td>
+      <td>${gPg}</td><td>${gPb}</td><td>${gPg+gPb}</td>
+      <td>${gMaxG-gPg}</td><td>${gMaxB-gPb}</td><td>${(gMaxG+gMaxB)-(gPg+gPb)}</td>
+      <td>${workingDays}</td>
+      <td class="pct" style="color:var(--accent)">${gPct}%</td>`;
+  }
 
-  buildMonthlyCharts(chartData);
-  toast('✅ Monthly report generated!');
+  toast('✅ Monthly report loaded!');
 }
 
 // ── CSV EXPORT ──
@@ -1374,93 +1617,24 @@ function getChartGridColor(){
   return document.documentElement.getAttribute('data-theme')==='light' ? 'rgba(0,0,0,.07)' : 'rgba(255,255,255,.07)';
 }
 
-function buildMonthlyCharts(data){
-  const labels = data.map(d=>d.name);
-  const pcts   = data.map(d=>d.pct);
-  const colors = pcts.map(p=>p<75?'#ff1744':p<85?'#ff9800':'#00c853');
-  const tc = getChartTextColor();
-  const gc = getChartGridColor();
-
-  // ── Chart 1: Attendance % bar chart ──
-  if(barChart) barChart.destroy();
-  barChart = new Chart($('barChart'),{
-    type:'bar',
-    data:{ labels, datasets:[{
-      label:'Attendance %',
-      data: pcts,
-      backgroundColor: colors,
-      borderRadius:6,
-      borderSkipped:false
-    }]},
-    options:{
-      responsive:true,
-      plugins:{
-        legend:{ labels:{ color:tc } },
-        tooltip:{ callbacks:{ label:c=>c.raw.toFixed(1)+'%' } },
-        title:{ display:true, text:'Class-wise Attendance %', color:tc, font:{ size:13 } }
-      },
-      scales:{
-        x:{ ticks:{ color:tc }, grid:{ color:gc } },
-        y:{ min:0, max:100,
-          ticks:{ color:tc, callback:v=>v+'%' },
-          grid:{ color:gc },
-          border:{ dash:[4,4] }
-        }
-      }
-    }
-  });
-
-  // ── Chart 2: Present % vs Absent % side-by-side grouped bar ──
-  // This correctly shows each class's present% and absent% as real values
-  const presentPcts = pcts;
-  const absentPcts  = pcts.map(p => parseFloat((100-p).toFixed(1)));
-  if(pieChart) pieChart.destroy();
-  pieChart = new Chart($('pieChart'),{
-    type:'bar',
-    data:{ labels, datasets:[
-      { label:'Present %', data:presentPcts, backgroundColor:'rgba(0,200,83,.8)',  borderRadius:4, borderSkipped:false },
-      { label:'Absent %',  data:absentPcts,  backgroundColor:'rgba(255,23,68,.7)', borderRadius:4, borderSkipped:false }
-    ]},
-    options:{
-      responsive:true,
-      plugins:{
-        legend:{ labels:{ color:tc } },
-        tooltip:{ callbacks:{ label:c=>c.dataset.label+': '+c.raw.toFixed(1)+'%' } },
-        title:{ display:true, text:'Present % vs Absent % per Class', color:tc, font:{ size:13 } }
-      },
-      scales:{
-        x:{ ticks:{ color:tc }, grid:{ color:gc } },
-        y:{ min:0, max:100,
-          stacked:false,
-          ticks:{ color:tc, callback:v=>v+'%' },
-          grid:{ color:gc }
-        }
-      }
-    }
-  });
-}
-
 // ══════════════════════════════════════════
 // DASHBOARD
 // ══════════════════════════════════════════
 async function buildDashboard(){
   const CLASSES = getClasses();
   const total   = CLASSES.reduce((a,c)=>a+c.roll_g+c.roll_b, 0);
-  // Use today for the "Today's Attendance" stat card
   const date    = $('selDate').value || todayDate.toISOString().split('T')[0];
-  // Use SELECTED month/year (in sync with Monthly tab)
   const month   = getSelectedMonth();
   const year    = getSelectedYear();
   const { workingDays } = getMonthWorkingDays(year, month);
   const isHol   = isHoliday(date);
 
-  // Real present count for selected date from cache
+  // Force fresh data for dashboard
+  invalidateFbCache();
   let present = 0;
   const fbAll0 = await getFbAttendance();
   if(fbAll0 && fbAll0[date]){
     CLASSES.forEach(c=>{ if(fbAll0[date][c.name]){ present += (fbAll0[date][c.name].pg||0)+(fbAll0[date][c.name].pb||0); } });
-  } else {
-    CLASSES.forEach(c=>{ const k=localStore[`${c.name}_${date}`]||{pg:0,pb:0}; present+=k.pg+k.pb; });
   }
 
   const pct = total>0 ? (present/total*100).toFixed(1) : '0.0';
@@ -1495,8 +1669,8 @@ async function buildDashboard(){
       return cnt>0 ? parseFloat((sum/cnt).toFixed(1)) : 0;
     });
   } else {
-    // Stable demo values (seeded by class index, not random per render)
-    pcts = CLASSES.map((_,i) => 75 + ((i*7+11) % 22));
+    // No Firebase — show zeros (no invented data)
+    pcts = CLASSES.map(() => 0);
   }
 
   const colors = pcts.map(p=>p<75?'#ff1744':p<85?'#ff9800':'#00c853');
@@ -1582,8 +1756,6 @@ async function buildDashboard(){
     CLASSES.forEach(c => {
       if(fbAll2[ds] && fbAll2[ds][c.name]){
         dayPresent += (fbAll2[ds][c.name].pg||0) + (fbAll2[ds][c.name].pb||0);
-      } else if(localStore[`${c.name}_${ds}`]){
-        dayPresent += (localStore[`${c.name}_${ds}`].pg||0) + (localStore[`${c.name}_${ds}`].pb||0);
       }
     });
     const dayPct = totalRoll>0 ? parseFloat((dayPresent/totalRoll*100).toFixed(1)) : 0;
@@ -1628,8 +1800,8 @@ function showTab(id){
   $(id).classList.add('active');
   $(`tab-${id}`).classList.add('active');
   if(id==='monthly'){
-    // Show working days instantly before Firebase loads
     showWorkingDaysSummaryInstant(getSelectedYear(), getSelectedMonth());
+    invalidateFbCache(); // always fresh when switching to monthly tab
     loadMonthly();
   }
   if(id==='summary'){
@@ -1638,78 +1810,207 @@ function showTab(id){
   }
   if(id==='admin'){ renderAdminEditor(); renderHolidayList(); renderRollHistoryTable(); }
   if(id==='daily'){
-    // Sync month/year dropdowns to match selected date
     syncDateToMonthYear($('selDate').value);
-    buildDailyTable($('selDate').value);
-    updateAllTotals($('selDate').value);
+    // ★ Always refresh from Firebase when switching to daily tab
+    const _date = $('selDate').value;
+    fetchAndCacheDayData(_date).then(() => {
+      buildDailyTable(_date);
+      updateAllTotals(_date);
+    });
   }
 }
 
 // ══════════════════════════════════════════
-// ROLE SWITCHING
+// ROLE LOGIN SYSTEM
 // ══════════════════════════════════════════
-function switchRole(val){
-  const adminTab = $('tab-admin');
-  if(val==='admin'){
-    if(adminLoggedIn){ adminTab.style.display='block'; }
-    else { $('roleSelect').value='teacher'; showAdminLogin(); }
+
+function pickRole(role){
+  selectedRoleTemp = role;
+  roleAttempts = 0;
+  $('rolePickerStep').style.display = 'none';
+  $('rolePasswordStep').style.display = 'block';
+  $('rolePwInput').value = '';
+  $('rolePwError').classList.remove('show');
+  $('rolePwAttempts').textContent = '';
+
+  const icons = { admin:'⚙️', teacher:'👩‍🏫', principal:'🏫' };
+  const titles = { admin:'Admin Login', teacher:'Teacher Login', principal:'Principal Login' };
+  const subs   = {
+    admin:'Enter admin password to manage classes & holidays',
+    teacher:'Enter teacher password to fill attendance',
+    principal:'Enter principal password to view attendance'
+  };
+  const bgs = {
+    admin:'linear-gradient(135deg,#e65100,#bf360c)',
+    teacher:'linear-gradient(135deg,#00695c,#004d40)',
+    principal:'linear-gradient(135deg,#0d47a1,#01579b)'
+  };
+  $('rolePwIcon').textContent   = icons[role];
+  $('rolePwIcon').style.background = bgs[role];
+  $('rolePwTitle').textContent  = titles[role];
+  $('rolePwSub').textContent    = subs[role];
+  setTimeout(()=>$('rolePwInput').focus(), 200);
+}
+
+function backToRolePicker(){
+  $('rolePickerStep').style.display = 'block';
+  $('rolePasswordStep').style.display = 'none';
+  selectedRoleTemp = null;
+}
+
+function attemptRoleLogin(){
+  if(Date.now() < roleLockUntil){
+    $('rolePwAttempts').textContent = `Locked. Wait ${Math.ceil((roleLockUntil-Date.now())/1000)}s.`;
     return;
   }
-  adminTab.style.display='none';
-  if($('admin').classList.contains('active')) showTab('daily');
+  const pw = $('rolePwInput').value;
+  const passwords = {
+    admin: ADMIN_PASSWORD,
+    teacher: TEACHER_PASSWORD,
+    principal: PRINCIPAL_PASSWORD
+  };
+  if(pw === passwords[selectedRoleTemp]){
+    currentRole = selectedRoleTemp;
+    roleAttempts = 0;
+    $('roleLoginOverlay').classList.add('hidden');
+    setTimeout(()=>{ $('roleLoginOverlay').style.display='none'; }, 400);
+    onRoleLoggedIn(currentRole);
+  } else {
+    roleAttempts++;
+    $('rolePwError').classList.add('show');
+    $('rolePwInput').value = '';
+    const pw_box = document.querySelector('.role-pw-box');
+    pw_box.classList.remove('shake'); void pw_box.offsetWidth; pw_box.classList.add('shake');
+    if(roleAttempts >= 5){
+      roleLockUntil = Date.now() + 60000;
+      $('rolePwAttempts').textContent = '🔒 Too many attempts. Wait 60s.';
+      $('rolePwInput').disabled = true;
+      setTimeout(()=>{ $('rolePwInput').disabled=false; roleAttempts=0; $('rolePwAttempts').textContent=''; }, 60000);
+    } else {
+      const rem = 5 - roleAttempts;
+      $('rolePwAttempts').textContent = `${rem} attempt${rem!==1?'s':''} remaining`;
+    }
+    $('rolePwInput').focus();
+  }
 }
 
-// ══════════════════════════════════════════
-// ADMIN AUTH
-// ══════════════════════════════════════════
-function showAdminLogin(){
-  $('adminPasswordInput').value='';
-  $('loginError').classList.remove('show');
-  $('loginAttemptsMsg').textContent='';
-  $('adminLoginOverlay').classList.add('show');
-  setTimeout(()=>$('adminPasswordInput').focus(), 350);
+function onRoleLoggedIn(role){
+  // Session bars
+  $('adminBar').classList.toggle('show', role==='admin');
+  $('teacherBar').classList.toggle('show', role==='teacher');
+  $('principalBar').classList.toggle('show', role==='principal');
+
+  // Tab visibility
+  const showTab4 = role==='admin';   // Manage Classes
+  const showTab3 = role!=='teacher'; // Dashboard
+  $('tab-admin').style.display   = showTab4 ? 'block' : 'none';
+  $('tab-summary').style.display = showTab3 ? 'block' : 'none';
+
+  if(role==='admin'){
+    adminLoggedIn = true;
+    $('adminSessionBar') && $('adminSessionBar').classList.add('show');
+    // Load pw fields in admin panel
+    $('pwTeacher').value   = TEACHER_PASSWORD;
+    $('pwPrincipal').value = PRINCIPAL_PASSWORD;
+    toast('🔓 Admin access granted!');
+  } else if(role==='teacher'){
+    // Populate teacher class selector
+    populateTeacherClassSel();
+    $('teacherClassBanner').style.display = 'flex';
+    $('teacherClassBannerMonthly').style.display = 'flex';
+    $('dailySubText').textContent = 'Fill attendance for your assigned class. Absent is calculated automatically.';
+    toast('👩‍🏫 Welcome, Teacher!');
+  } else if(role==='principal'){
+
+    $('principalNoticeMonthly').style.display = 'flex';
+    toast('🏫 Welcome, Principal!');
+  }
+
+  // Build UI — fetch today's Firebase data first so table shows real values
+  if(role==='admin'){ renderAdminEditor(); renderHolidayList(); renderRollHistoryTable(); }
+  const _loginDate = $('selDate').value;
+  fetchAndCacheDayData(_loginDate).then(() => {
+    buildDailyTable(_loginDate);
+    updateAllTotals(_loginDate);
+  });
+  showTab('daily');
 }
+
+function doLogout(){
+  currentRole   = null;
+  adminLoggedIn = false;
+  selectedRoleTemp = null;
+  // Hide session bars
+  $('adminBar').classList.remove('show');
+  $('teacherBar').classList.remove('show');
+  $('principalBar').classList.remove('show');
+  $('adminSessionBar') && $('adminSessionBar').classList.remove('show');
+  $('teacherClassBanner').style.display = 'none';
+  $('teacherClassBannerMonthly').style.display = 'none';
+
+  $('principalNoticeMonthly').style.display = 'none';
+  // Reset overlay
+  $('rolePickerStep').style.display  = 'block';
+  $('rolePasswordStep').style.display = 'none';
+  $('roleLoginOverlay').style.display = 'flex';
+  $('roleLoginOverlay').classList.remove('hidden');
+  toast('👋 Logged out.', 'warn');
+}
+
+// teacher class selector helpers
+function populateTeacherClassSel(){
+  const sel = $('teacherClassSel');
+  sel.innerHTML = '';
+  getClasses().forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.name; o.textContent = c.name;
+    sel.appendChild(o);
+  });
+  onTeacherClassChange();
+}
+
+function onTeacherClassChange(){
+  const cls = $('teacherClassSel').value;
+  $('teacherBarClass').textContent = cls ? ` — ${cls}` : '';
+  $('teacherClassLabelMonthly').textContent = cls || '';
+  buildDailyTable($('selDate').value);
+}
+
+function getTeacherClass(){
+  const sel = $('teacherClassSel');
+  return sel ? sel.value : null;
+}
+
+// ── legacy no-op wrappers ──
+function switchRole(){}
+function showAdminLogin(){ pickRole('admin'); }
+function adminLogout(){ doLogout(); }
 function cancelAdminLogin(){
   $('adminLoginOverlay').classList.remove('show');
-  $('roleSelect').value='teacher';
 }
+
+// password saving
+async function saveRolePasswords(){
+  const t = $('pwTeacher').value.trim();
+  const p = $('pwPrincipal').value.trim();
+  if(!t || !p){ toast('⚠️ Passwords cannot be empty','warn'); return; }
+  TEACHER_PASSWORD   = t;
+  PRINCIPAL_PASSWORD = p;
+  if(window._fbReady){
+    await window.fbSet('config/rolePasswords', { teacher:t, principal:p });
+  }
+  toast('✅ Passwords updated!');
+}
+
+// ══════════════════════════════════════════
+// ADMIN AUTH (legacy modal — kept but unused; new flow uses roleLoginOverlay)
+// ══════════════════════════════════════════
 function attemptAdminLogin(){
-  if(Date.now()<lockoutUntil){
-    $('loginAttemptsMsg').textContent=`Locked. Wait ${Math.ceil((lockoutUntil-Date.now())/1000)}s.`;
-    return;
-  }
-  if($('adminPasswordInput').value===ADMIN_PASSWORD){
-    adminLoggedIn=true; loginAttempts=0;
+  if($('adminPasswordInput') && $('adminPasswordInput').value===ADMIN_PASSWORD){
     $('adminLoginOverlay').classList.remove('show');
-    $('roleSelect').value='admin';
-    $('tab-admin').style.display='block';
-    $('adminSessionBar').classList.add('show');
-    toast('🔓 Admin access granted!');
-  } else {
-    loginAttempts++;
-    $('loginError').classList.add('show');
-    const box=document.querySelector('.login-box');
-    box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
-    $('adminPasswordInput').value='';
-    const rem=5-loginAttempts;
-    if(loginAttempts>=5){
-      lockoutUntil=Date.now()+60000;
-      $('loginAttemptsMsg').textContent='🔒 Locked for 60 seconds.';
-      $('adminPasswordInput').disabled=true;
-      setTimeout(()=>{$('adminPasswordInput').disabled=false;loginAttempts=0;$('loginAttemptsMsg').textContent='';},60000);
-    } else {
-      $('loginAttemptsMsg').textContent=`${rem} attempt${rem!==1?'s':''} remaining`;
-    }
-    $('adminPasswordInput').focus();
+    currentRole='admin'; adminLoggedIn=true;
+    onRoleLoggedIn('admin');
   }
-}
-function adminLogout(){
-  adminLoggedIn=false;
-  $('tab-admin').style.display='none';
-  $('adminSessionBar').classList.remove('show');
-  $('roleSelect').value='teacher';
-  if($('admin').classList.contains('active')) showTab('daily');
-  toast('👋 Logged out of admin.');
 }
 
 // ══════════════════════════════════════════
